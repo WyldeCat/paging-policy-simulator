@@ -1,0 +1,7 @@
+
+obj/pinatrace.o
+obj/pinatrace.so
+
+**/pin.log
+**/pinatrace.out
+**/__pycache__

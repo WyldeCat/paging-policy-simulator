@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include "pin.H"
 
-
 FILE * trace;
 
 // Print a memory read record
