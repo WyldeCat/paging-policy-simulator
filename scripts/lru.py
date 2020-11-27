@@ -6,25 +6,30 @@ class LRU(PagePolicy):
 
     name = "LRU"
     # TODO: Implement add_memtrace
-    cache = []
+    present_pages = []
+    hit_counter = 0
+    miss_counter = 0
 
     def add_memtrace(self, memref):
         page_number = self.get_page_number(memref)
 
-        # first reference page
-        if not page_number in self.cache:
+        # if the page is not present
+        if page_number not in self.present_pages:
             self.miss_counter += 1
-            # if len(cache) < max_page_entry_count: # there is space
-            if len(self.cache) < self.max_page_entry_count:  # there is space
-                self.cache.append(page_number)  # append ref at end of the list
-            else:  # full
-                print("cache full")
-                self.cache.pop(0)  # evict first element
-                self.cache.append(page_number)  # append at end of the list
-        else:  # page in the list
+            # if not full
+            if len(self.present_pages) < self.max_page_entry_count:
+                self.present_pages.append(page_number)
+            # if full
+            else:
+                self.present_pages.remove(self.present_pages[0])
+                self.present_pages.append(page_number)
+
+        # if the page is present
+        else:
             self.hit_counter += 1
-            self.cache.pop(self.cache.index(page_number))  # pop the old one
-            self.cache.append(page_number)  # append new one
+            # move the page to the back
+            self.present_pages.remove(page_number)
+            self.present_pages.append(page_number)
 
     def print_detailed_result(self):
         # TODO
