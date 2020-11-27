@@ -1,10 +1,11 @@
 from page_policy import PagePolicy
 
 
-class FIFO(PagePolicy):
+class LFU(PagePolicy):
     """Sub class"""
 
-    name = "FIFO"
+    name = "LFU"
+    # TODO: Implement add_memtrace
     cache = []
 
     def add_memtrace(self, memref):
