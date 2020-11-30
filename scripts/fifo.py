@@ -14,7 +14,7 @@ class FIFO(PagePolicy):
         if not page_number in self.cache:
             self.miss_counter += 1
             # if len(cache) < max_page_entry_count: # there is space
-            if len(self.cache) < self.max_page_entry_count:  # there is space
+            if len(self.cache) < self.max_page_count:  # there is space
                 self.cache.append(page_number)  # append ref at end of the list
             else:  # full
                 print("cache full")
