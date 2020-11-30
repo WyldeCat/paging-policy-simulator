@@ -5,26 +5,26 @@ class LFU(PagePolicy):
     """Sub class"""
 
     name = "LFU"
-    # TODO: Implement add_memtrace
-    cache = []
+    freq_for_pages = dict()
 
     def add_memtrace(self, memref):
         page_number = self.get_page_number(memref)
 
-        # first reference page
-        if not page_number in self.cache:
+        # if page is not present
+        if page_number not in self.freq_for_pages:
             self.miss_counter += 1
-            # if len(cache) < max_page_entry_count: # there is space
-            if len(self.cache) < self.max_page_entry_count:  # there is space
-                self.cache.append(page_number)  # append ref at end of the list
+            # if not full
+            if len(self.freq_for_pages) < self.max_page_entry_count:
+                self.freq_for_pages[page_number] = 1
+
             else:  # full
-                print("cache full")
-                self.cache.pop(0)  # evict first element
-                self.cache.append(page_number)  # append at end of the list
+                least_used_page = min(self.freq_for_pages, self.freq_for_pages.get)
+                del self.freq_for_pages[least_used_page]
+                self.freq_for_pages[page_number] = 1
+
         else:  # page in the list
             self.hit_counter += 1
-            self.cache.pop(self.cache.index(page_number))  # pop the old one
-            self.cache.append(page_number)  # append new one
+            self.freq_for_pages[page_number] += 1
 
     def print_detailed_result(self):
         # TODO
