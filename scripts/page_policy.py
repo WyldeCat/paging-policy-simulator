@@ -1,12 +1,16 @@
 class PagePolicy:
     """ Super Class"""
 
-    max_memory_size = 4*1024*1024  # 4GB
-    page_entry_size = 4  # 4KB
-    max_page_entry_count = max_memory_size/page_entry_size
+    memory_size = 0
+    page_frame_size = 4  # 4KB
+    max_page_count = 0
     hit_counter = 0
     miss_counter = 0
     name = "NONE"
+
+    def __init__(self, memory_size):
+        self.memory_size = memory_size
+        self.max_page_count = self.memory_size/self.page_frame_size
 
     def get_page_number(self, memref):
         """hex to binary"""

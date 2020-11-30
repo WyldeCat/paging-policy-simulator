@@ -43,8 +43,12 @@ if len(sys.argv) != 2:
     print("Please check the usage...... python ./simulator.py [pinatrace.out]")
     sys.exit(1)
 
+
+memory_size = input("input memory size (GB): ")
+memory_size = memory_size*1024*1024; # KB
+
 # FIFO simulator
-fifo = FIFO()
+fifo = FIFO(memory_size)
 
 # read file
 read_memtrace(sys.argv[1])
