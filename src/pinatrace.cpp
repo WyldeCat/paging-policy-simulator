@@ -14,20 +14,24 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include "pin.H"
 
-FILE * trace;
+int sock;
 
 // Print a memory read record
 VOID RecordMemRead(VOID * ip, VOID * addr)
 {
-    fprintf(trace,"%p: R %p\n", ip, addr);
+    // TODO
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
-    fprintf(trace,"%p: W %p\n", ip, addr);
+    // TODO
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -67,8 +71,7 @@ VOID Instruction(INS ins, VOID *v)
 
 VOID Fini(INT32 code, VOID *v)
 {
-    fprintf(trace, "#eof\n");
-    fclose(trace);
+   close(sock); 
 }
 
 /* ===================================================================== */
@@ -90,13 +93,33 @@ int main(int argc, char *argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
 
-    trace = fopen("pinatrace.out", "w");
+    FILE *fp = fopen("asdf", "w");
+    fprintf(fp, "asdf\n");
+    fclose(fp);
 
-    INS_AddInstrumentFunction(Instruction, 0);
-    PIN_AddFiniFunction(Fini, 0);
+    struct sockaddr_un addr;
+
+    sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("socket");
+        return -1;
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "./socket");
+    int ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    if (ret < 0) {
+        perror("connect");
+        return -1;
+    }
+
+
+    //INS_AddInstrumentFunction(Instruction, 0);
+    //PIN_AddFiniFunction(Fini, 0);
 
     // Never returns
-    PIN_StartProgram();
+    //PIN_StartProgram();
     
     return 0;
 }

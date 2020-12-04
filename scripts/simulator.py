@@ -2,10 +2,16 @@
 from page_policy import PagePolicy
 from fifo import FIFO
 
+import socket
 import sys
+import os
+import argparse
+import subprocess
 
+parser = argparse.ArgumentParser(description = '')
+parser.add_argument('--mem', default = 4096, type = int, help = 'memory size(MB)')
+parser.add_argument('--target', required=True, type = str, help = 'target program')
 # memory referece
-
 
 class MemRef:
     def __init__(self, ip, op, addr):
@@ -38,20 +44,31 @@ def read_memtrace(filename):
             fifo.add_memtrace(memref)
 
 
-# check args
-if len(sys.argv) != 2:
-    print("Please check the usage...... python ./simulator.py [pinatrace.out]")
-    sys.exit(1)
+def main():
+    args = parser.parse_args()
+
+    memory_size = args.mem
+    memory_size = memory_size * 1024; # KB
+
+    target = args.target
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind("./socket")
+    sock.listen(1)
+
+    print(os.environ["PIN_ROOT"])
+    subprocess.run([os.environ["PIN_ROOT"]+"/pin", "-t", "../obj/pinatrace.so","--","/bin/ls"], cwd="./")
+
+    print("waiting connection..!")
+    conn, client = sock.accept()
+    print("connected!")
+    while True:
+        n = conn.recv(4)
+        if len(n) == 0:
+            break
+
+    os.remove("./socket")
 
 
-memory_size = input("input memory size (GB): ")
-memory_size = memory_size*1024*1024; # KB
-
-# FIFO simulator
-fifo = FIFO(memory_size)
-
-# read file
-read_memtrace(sys.argv[1])
-
-# print FIFO simulator results
-fifo.print_result()
+if __name__ == "__main__":
+    main()
