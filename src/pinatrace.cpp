@@ -25,13 +25,19 @@ int sock;
 // Print a memory read record
 VOID RecordMemRead(VOID * ip, VOID * addr)
 {
-    // TODO
+    long type = 0;
+    write(sock, &type, sizeof(type));
+    write(sock, &ip, sizeof(type));
+    write(sock, &addr, sizeof(addr));
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
-    // TODO
+    long type = 1;
+    write(sock, &type, sizeof(type));
+    write(sock, &ip, sizeof(type));
+    write(sock, &addr, sizeof(addr));
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -93,10 +99,6 @@ int main(int argc, char *argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
 
-    FILE *fp = fopen("asdf", "w");
-    fprintf(fp, "asdf\n");
-    fclose(fp);
-
     struct sockaddr_un addr;
 
     sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -114,12 +116,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-
-    //INS_AddInstrumentFunction(Instruction, 0);
-    //PIN_AddFiniFunction(Fini, 0);
+    INS_AddInstrumentFunction(Instruction, 0);
+    PIN_AddFiniFunction(Fini, 0);
 
     // Never returns
-    //PIN_StartProgram();
+    PIN_StartProgram();
     
     return 0;
 }

@@ -22,27 +22,7 @@ class MemRef:
     def __str__(self):
         return "ip : " + self.ip + ", op : " + self.op + ", addr : " + self.addr + "\n"
 
-
-def read_memtrace(filename):
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-        # delete the last line : #eof
-        lines.pop()
-
-        for line in lines:
-            line = line.rstrip("\n")
-            line_data = line.split(" ")
-
-            ip = line_data[0]
-            ip = ip[:-1]  # delete ':'
-            op = line_data[1]
-            addr = line_data[2]
-
-            memref = MemRef(ip, op, addr)
-
-            # send memory reference to simulator
-            fifo.add_memtrace(memref)
-
+class ConnectionClose(Exception): pass
 
 def main():
     args = parser.parse_args()
@@ -56,19 +36,27 @@ def main():
     sock.bind("./socket")
     sock.listen(1)
 
-    print(os.environ["PIN_ROOT"])
-    subprocess.run([os.environ["PIN_ROOT"]+"/pin", "-t", "../obj/pinatrace.so","--","/bin/ls"], cwd="./")
+    subprocess.Popen([os.environ["PIN_ROOT"] + "/pin", "-t",
+        "../obj/pinatrace.so", "--", target], cwd="./")
 
-    print("waiting connection..!")
-    conn, client = sock.accept()
-    print("connected!")
-    while True:
-        n = conn.recv(4)
-        if len(n) == 0:
-            break
+    conn, _ = sock.accept()
+
+    try:
+        while True:
+            def recv_long():
+                ret = conn.recv(8)
+                if len(ret) == 0:
+                    raise ConnectionClose
+                return int.from_bytes(ret, byteorder='little')
+
+            type = recv_long()
+            ip = recv_long()
+            addr = recv_long()
+            # TODO send to the instance
+    except ConnectionClose:
+        print("ConnectionClosed!")
 
     os.remove("./socket")
-
 
 if __name__ == "__main__":
     main()
