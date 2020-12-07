@@ -5,7 +5,6 @@ class LRU(PagePolicy):
     """Sub class"""
 
     name = "LRU"
-    # TODO: Implement add_memtrace
     present_pages = []
     hit_counter = 0
     miss_counter = 0
