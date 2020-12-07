@@ -14,7 +14,7 @@ class PagePolicy:
 
     def get_page_number(self, memref):
         """hex to binary"""
-        addr = int(memref.addr, 16)  # 48 bit
+        addr = memref.addr
         # print(bin(addr))
         addr = addr >> 12  # block offet 12 bit cut
         return addr

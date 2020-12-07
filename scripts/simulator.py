@@ -29,6 +29,7 @@ def main():
 
     memory_size = args.mem
     memory_size = memory_size * 1024; # KB
+    fifo = FIFO(memory_size)
 
     target = args.target
 
@@ -52,9 +53,12 @@ def main():
             type = recv_long()
             ip = recv_long()
             addr = recv_long()
-            # TODO send to the instance
+            fifo.add_memtrace(MemRef(ip, type, addr))
+
     except ConnectionClose:
         print("ConnectionClosed!")
+        fifo.print_result()
+        # TODO print result
 
     os.remove("./socket")
 
