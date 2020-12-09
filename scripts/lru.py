@@ -16,7 +16,7 @@ class LRU(PagePolicy):
         if page_number not in self.present_pages:
             self.miss_counter += 1
             # if not full
-            if len(self.present_pages) < self.max_page_entry_count:
+            if len(self.present_pages) < self.max_page_count:
                 self.present_pages.append(page_number)
             # if full
             else:

@@ -14,7 +14,7 @@ class LFU(PagePolicy):
         if page_number not in self.freq_for_pages:
             self.miss_counter += 1
             # if not full
-            if len(self.freq_for_pages) < self.max_page_entry_count:
+            if len(self.freq_for_pages) < self.max_page_count:
                 self.freq_for_pages[page_number] = 1
 
             else:  # full

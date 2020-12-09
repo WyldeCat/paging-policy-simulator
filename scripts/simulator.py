@@ -1,6 +1,8 @@
 
 from page_policy import PagePolicy
 from fifo import FIFO
+from lru import LRU
+from lfu import LFU
 
 import socket
 import sys
@@ -10,8 +12,8 @@ import subprocess
 
 parser = argparse.ArgumentParser(description = '')
 parser.add_argument('--mem', default = 4096, type = int, help = 'memory size(MB)')
+parser.add_argument('--policy', default = 'FIFO', type = str, choices=['FIFO', 'LRU', 'LFU'], help = 'paging policy')
 parser.add_argument('--target', required=True, type = str, help = 'target program')
-# memory referece
 
 class MemRef:
     def __init__(self, ip, op, addr):
@@ -28,10 +30,19 @@ def main():
     args = parser.parse_args()
 
     memory_size = args.mem
-    memory_size = memory_size * 1024; # KB
-    fifo = FIFO(memory_size)
+    memory_size = memory_size * 1024 # KB
+
+    if args.policy == 'FIFO':
+        policy = FIFO(memory_size)
+    elif args.policy == 'LRU':
+        policy = LRU(memory_size)
+    elif args.policy == 'LFU':
+        policy = LFU(memory_size)
 
     target = args.target
+
+    if os.path.exists("./socket"):
+        os.remove("./socket")
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.bind("./socket")
@@ -53,11 +64,11 @@ def main():
             type = recv_long()
             ip = recv_long()
             addr = recv_long()
-            fifo.add_memtrace(MemRef(ip, type, addr))
+            policy.add_memtrace(MemRef(ip, type, addr))
 
     except ConnectionClose:
         print("ConnectionClosed!")
-        fifo.print_result()
+        policy.print_result()
         # TODO print result
 
     os.remove("./socket")
