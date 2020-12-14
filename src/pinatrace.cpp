@@ -27,7 +27,7 @@ VOID RecordMemRead(VOID * ip, VOID * addr)
 {
     long type = 0;
     write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(type));
+    write(sock, &ip, sizeof(ip));
     write(sock, &addr, sizeof(addr));
 }
 
@@ -36,7 +36,7 @@ VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
     long type = 1;
     write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(type));
+    write(sock, &ip, sizeof(ip));
     write(sock, &addr, sizeof(addr));
 }
 
