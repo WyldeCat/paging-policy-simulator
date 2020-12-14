@@ -69,10 +69,11 @@ def main():
             type = recv_long()
             ip = recv_long()
             addr = recv_long()
+            ts = recv_long()
             policy.add_memtrace(MemRef(ip, type, addr))
 
             if trace_out != None:
-                record = str(type) + ", " + hex(addr) + "\n"
+                record = str(ts) + ", " + str(type) + ", " + hex(addr) + "\n"
                 trace_out.write(record)
 
     except ConnectionClose:
