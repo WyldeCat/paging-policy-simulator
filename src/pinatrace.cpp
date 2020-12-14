@@ -1,19 +1,9 @@
 /*
- * Copyright 2002-2020 Intel Corporation.
- * 
- * This software is provided to you as Sample Source Code as defined in the accompanying
- * End User License Agreement for the Intel(R) Software Development Products ("Agreement")
- * section 1.L.
- * 
- * This software and the related documents are provided as is, with no express or implied
- * warranties, other than those that are expressly stated in the License.
- */
-
-/*
  *  This file contains an ISA-portable PIN tool for tracing memory accesses.
  */
 
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,23 +11,38 @@
 #include "pin.H"
 
 int sock;
+struct timeval start;
+
+long get_timestamp() {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
+    return (now.tv_sec - start.tv_sec) * 1000000L +
+        (now.tv_usec - start.tv_usec);
+}
 
 // Print a memory read record
 VOID RecordMemRead(VOID * ip, VOID * addr)
 {
     long type = 0;
+    long timestamp = get_timestamp();
+
     write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(type));
+    write(sock, &ip, sizeof(ip));
     write(sock, &addr, sizeof(addr));
+    write(sock, &timestamp, sizeof(timestamp));
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
     long type = 1;
+    long timestamp = get_timestamp();
+
     write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(type));
+    write(sock, &ip, sizeof(ip));
     write(sock, &addr, sizeof(addr));
+    write(sock, &timestamp, sizeof(timestamp));
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -118,6 +123,12 @@ int main(int argc, char *argv[])
 
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
+
+    ret = gettimeofday(&start, NULL);
+    if (ret < 0) {
+        perror("gettimeofday");
+        return -1;
+    }
 
     // Never returns
     PIN_StartProgram();

@@ -1,6 +1,0 @@
-LRU
-FIFO
-CLOCKPRO
-LFU
-ARC
-...
