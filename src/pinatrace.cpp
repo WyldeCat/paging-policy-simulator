@@ -5,14 +5,13 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include "pin.H"
+#include "page_policy.hpp"
+#include "simulate.hpp"
 
-int sock;
 struct timeval start;
-PIN_MUTEX sock_lock;
+PIN_MUTEX sim_lock;
 
 long get_timestamp() {
     struct timeval now;
@@ -30,9 +29,9 @@ VOID send_record(long type, long ip, long addr, long timestamp)
     *(long *)(tmp + 16) = addr;
     *(long *)(tmp + 24) = timestamp;
 
-    while (!PIN_MutexTryLock(&sock_lock));
-    write(sock, tmp, sizeof(tmp));
-    PIN_MutexUnlock(&sock_lock);
+    while (!PIN_MutexTryLock(&sim_lock));
+    add_memtrace(type, ip, addr, timestamp);
+    PIN_MutexUnlock(&sim_lock);
 }
 
 // Print a memory read record
@@ -86,7 +85,6 @@ VOID Instruction(INS ins, VOID *v)
 
 VOID Fini(INT32 code, VOID *v)
 {
-   close(sock); 
 }
 
 /* ===================================================================== */
@@ -108,29 +106,16 @@ int main(int argc, char *argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
 
-    struct sockaddr_un addr;
-
-    PIN_MutexInit(&sock_lock);
-
-    sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock < 0) {
-        perror("socket");
-        return -1;
-    }
-
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, "./socket");
-    int ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
-    if (ret < 0) {
-        perror("connect");
-        return -1;
-    }
+    PIN_MutexInit(&sim_lock);
 
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
 
-    ret = gettimeofday(&start, NULL);
+    PIN_THREAD_UID uid;
+    THREADID tid = PIN_SpawnInternalThread(simulate_loop, nullptr, 0, &uid);
+    assert(tid != INVALID_THREADID);
+
+    int ret = gettimeofday(&start, NULL);
     if (ret < 0) {
         perror("gettimeofday");
         return -1;
