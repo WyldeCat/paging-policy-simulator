@@ -1,6 +1,7 @@
 
 obj/pinatrace.o
 obj/pinatrace.so
+tests/bin/*
 
 **/pin.log
 **/pinatrace.out

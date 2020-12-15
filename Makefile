@@ -11,7 +11,7 @@ $(TEST_BIN_DIR):
 	mkdir -p $@
 
 $(TEST_BIN_DIR)%: $(TEST_DIR)/%.cpp | $(TEST_BIN_DIR)
-	g++ -g -std=c++14 $< -o $@
+	g++ -g -std=c++14 $< -o $@ -lpthread
 
 clean:
 	rm obj/pinatrace.so | true

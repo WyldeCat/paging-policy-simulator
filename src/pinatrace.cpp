@@ -12,6 +12,7 @@
 
 int sock;
 struct timeval start;
+PIN_MUTEX sock_lock;
 
 long get_timestamp() {
     struct timeval now;
@@ -21,28 +22,31 @@ long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
+VOID send_record(long type, long ip, long addr, long timestamp)
+{
+    char tmp[8 * 4];
+    *(long *)(tmp + 0) = type;
+    *(long *)(tmp + 8) = ip;
+    *(long *)(tmp + 16) = addr;
+    *(long *)(tmp + 24) = timestamp;
+
+    while (!PIN_MutexTryLock(&sock_lock));
+    write(sock, tmp, sizeof(tmp));
+    PIN_MutexUnlock(&sock_lock);
+}
+
 // Print a memory read record
 VOID RecordMemRead(VOID * ip, VOID * addr)
 {
-    long type = 0;
     long timestamp = get_timestamp();
-
-    write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(ip));
-    write(sock, &addr, sizeof(addr));
-    write(sock, &timestamp, sizeof(timestamp));
+    send_record(0, (long)ip, (long)addr, timestamp);
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
-    long type = 1;
     long timestamp = get_timestamp();
-
-    write(sock, &type, sizeof(type));
-    write(sock, &ip, sizeof(ip));
-    write(sock, &addr, sizeof(addr));
-    write(sock, &timestamp, sizeof(timestamp));
+    send_record(1, (long)ip, (long)addr, timestamp);
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -105,6 +109,8 @@ int main(int argc, char *argv[])
     if (PIN_Init(argc, argv)) return Usage();
 
     struct sockaddr_un addr;
+
+    PIN_MutexInit(&sock_lock);
 
     sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
