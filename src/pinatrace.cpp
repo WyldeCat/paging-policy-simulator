@@ -23,12 +23,6 @@ long get_timestamp() {
 
 VOID send_record(long type, long ip, long addr, long timestamp)
 {
-    char tmp[8 * 4];
-    *(long *)(tmp + 0) = type;
-    *(long *)(tmp + 8) = ip;
-    *(long *)(tmp + 16) = addr;
-    *(long *)(tmp + 24) = timestamp;
-
     while (!PIN_MutexTryLock(&sim_lock));
     add_memtrace(type, ip, addr, timestamp);
     PIN_MutexUnlock(&sim_lock);
@@ -102,8 +96,16 @@ INT32 Usage()
 /* Main                                                                  */
 /* ===================================================================== */
 
+simulate_args args;
 int main(int argc, char *argv[])
 {
+    // HACK
+    args.mem = argv[5];
+    args.policy = argv[6];
+    for (int i = 5; i < argc - 1; i++) {
+        argv[i] = argv[i + 2];
+    }
+
     if (PIN_Init(argc, argv)) return Usage();
 
     PIN_MutexInit(&sim_lock);
@@ -112,7 +114,7 @@ int main(int argc, char *argv[])
     PIN_AddFiniFunction(Fini, 0);
 
     PIN_THREAD_UID uid;
-    THREADID tid = PIN_SpawnInternalThread(simulate_loop, nullptr, 0, &uid);
+    THREADID tid = PIN_SpawnInternalThread(simulate_loop, &args, 0, &uid);
     assert(tid != INVALID_THREADID);
 
     int ret = gettimeofday(&start, NULL);

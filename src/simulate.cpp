@@ -3,9 +3,11 @@
 #include <stdio.h>
 
 void simulate_loop(void *arg) {
-    printf("Hello, cpp!\n");
+    simulate_args *args = (simulate_args *)arg;
+
+    printf("Hello, cpp! %s %s\n", args->mem, args->policy);
 }
 
-void add_memtrace(bool is_write, long ip, long addr) {
+void add_memtrace(bool is_write, long ip, long addr, long timestamp) {
 
 }
