@@ -1,7 +1,8 @@
 
-obj/pinatrace.o
-obj/pinatrace.so
+obj/*
+tests/bin/*
 
 **/pin.log
+**/pintool.log
 **/pinatrace.out
 **/__pycache__
