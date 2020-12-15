@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
     // HACK
     args.mem = argv[5];
     args.policy = argv[6];
+    args.lock = &sim_lock;
     for (int i = 5; i < argc - 1; i++) {
         argv[i] = argv[i + 2];
     }
