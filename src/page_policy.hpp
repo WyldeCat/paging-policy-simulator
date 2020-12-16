@@ -12,34 +12,41 @@ public:
         max_num_page_ = mem_size_ / page_size;
         total_access_ = 0;
         total_hit_ = 0;
+        total_eviction_ = 0;
     }
 
     void add_memtrace(Record &record) {
         total_access_++;
 
-        record.is_hit = add_memtrace_(record);
-
-        total_hit_ += record.is_hit;
+        int ret = add_memtrace_(record);
+        record.is_hit = (ret == 1);
+        total_hit_ += (ret == 1);
+        total_eviction_ += (ret == 2);
         results_.emplace_back(std::move(record));
+        evictions_.push_back((ret == 2));
     }
 
     const std::vector<Record> &results() { return results_; }
+    const std::vector<bool> &evictions() { return evictions_; }
     virtual const char *name() = 0;
 
     long total_access() { return total_access_; }
     long total_hit() { return total_hit_; }
     long total_miss() { return total_access_ - total_hit_; }
+    long total_eviction() { return total_eviction_; }
 
 protected:
     static constexpr size_t page_size = 4;
     size_t mem_size_;
     size_t max_num_page_;
     std::vector<Record> results_;
+    std::vector<bool> evictions_;
 
     long total_access_;
     long total_hit_;
+    long total_eviction_;
 
-    virtual bool add_memtrace_(const Record &record) = 0;
+    virtual int add_memtrace_(const Record &record) = 0;
 };
 
 class LRU : public PagePolicy {
@@ -48,7 +55,7 @@ public:
     virtual const char *name() override { return "LRU"; }
 
 private:
-    virtual bool add_memtrace_(const Record &record) override;
+    virtual int add_memtrace_(const Record &record) override;
     std::map<long, size_t> vpn_to_index_;
     std::map<size_t, long> index_to_vpn_;
     size_t count_;

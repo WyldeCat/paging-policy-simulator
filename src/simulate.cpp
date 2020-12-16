@@ -26,16 +26,22 @@ long get_timestamp();
 
 void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     const std::vector<Record> &results = policy->results();
+    const std::vector<bool> &evictions = policy->evictions();
 
     long interval = ((end_ts - offset) + num_interval - 1) / num_interval;
     std::vector<size_t> num_access(num_interval, 0);
     std::vector<size_t> num_miss(num_interval, 0);
+    std::vector<size_t> num_eviction(num_interval, 0);
 
-    for (const auto &result : results) {
+    for (size_t i = 0; i < results.size(); i++) {
+        const Record &result = results[i];
+        const bool &eviction = evictions[i];
+
         long ts = std::max(0L, result.time_stamp - offset);
         long idx = ts / interval;
         num_access[idx]++;
         num_miss[idx] += (result.is_hit == 0);
+        num_eviction[idx] += eviction;
     }
 
     FILE *csv = fopen(path_name, "w");
@@ -45,7 +51,8 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     }
 
     for (long i = 0; i < num_interval; i++) {
-        fprintf(csv, "%ld, %ld, %ld\n", (i + 1) * interval, num_access[i], num_miss[i]);
+        fprintf(csv, "%ld, %ld, %ld, %ld\n", (i + 1) * interval,
+            num_access[i], num_miss[i], num_eviction[i]);
     }
 
     int ret = fclose(csv);
@@ -133,6 +140,7 @@ void simulate_loop(void *arg) {
     fprintf(stderr, "[Simulator][INFO] Total mem access : %ld\n", policy->total_access());
     fprintf(stderr, "[Simulator][INFO]              hit : %ld\n", policy->total_hit());
     fprintf(stderr, "[Simulator][INFO]             miss : %ld\n", policy->total_miss());
+    fprintf(stderr, "[Simulator][INFO]         eviction : %ld\n", policy->total_eviction());
     fprintf(stderr, "[Simulator][INFO]        Hit ratio : %f\n\n",
         1.0 * policy->total_hit() / policy->total_access());
 

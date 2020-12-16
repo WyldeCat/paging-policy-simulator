@@ -9,6 +9,7 @@ def write_graph(csv, out, title):
 
     plt.plot(intervals, array[1], label='access')
     plt.plot(intervals, array[2], label='miss')
+    plt.plot(intervals, array[3], label='eviction')
     plt.title(title)
     plt.xlabel('timeline(ms)')
     plt.legend()
