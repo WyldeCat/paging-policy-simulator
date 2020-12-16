@@ -17,6 +17,7 @@ public:
         results_.emplace_back(std::move(record));
     }
 
+    const std::vector<Record> &results() { return results_; }
     virtual const char *name() = 0;
 
 protected:

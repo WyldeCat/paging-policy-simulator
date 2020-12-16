@@ -17,6 +17,7 @@ void simulate_loop(void *arg) {
     size_t mem = std::atoi(args->mem) * 1024;
     std::string policy_name(args->policy);
     sim_lock = args->lock;
+    long end_ts;
 
     if (policy_name == "LRU") {
         policy = new LRU(mem);
@@ -36,9 +37,19 @@ void simulate_loop(void *arg) {
         }
         PIN_MutexUnlock(sim_lock);
 
-        if (!is_empty) policy->add_memtrace(r);
+        if (!is_empty && r.is_write != 2) policy->add_memtrace(r);
+        else if (!is_empty && r.is_write == 2) {
+            end_ts = r.time_stamp;
+            break;
+        }
         sleep(0);
     }
+
+    constexpr long num_interval = 500;
+    long interval = (end_ts + num_interval - 1) / num_interval;
+
+    const std::vector<Record> &results = policy->results();
+    // TODO fill buffers for graph
 }
 
 void add_memtrace(bool is_write, long ip, long addr, long timestamp) {
