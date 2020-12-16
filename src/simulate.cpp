@@ -76,9 +76,15 @@ void simulate_loop(void *arg) {
         sleep(0);
     }
 
-    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n");
+    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n\n");
+    fprintf(stderr, "[Simulator][INFO] Total mem access : %ld\n", policy->total_access());
+    fprintf(stderr, "[Simulator][INFO]              hit : %ld\n", policy->total_hit());
+    fprintf(stderr, "[Simulator][INFO]             miss : %ld\n", policy->total_miss());
+    fprintf(stderr, "[Simulator][INFO]        Hit ratio : %f\n\n",
+        1.0 * policy->total_hit() / policy->total_access());
+
     fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
-    write_results_csv(1000, end_ts, "out.csv");
+    write_results_csv(100, end_ts, "out.csv");
 }
 
 void add_memtrace(int is_write, long ip, long addr, long timestamp) {
