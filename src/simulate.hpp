@@ -15,8 +15,9 @@ struct Record {
 struct simulate_args {
     char *mem;
     char *policy;
-    PIN_MUTEX *lock;
+    char *num_buffer;
+    char *size_buffer;
 };
 
 void simulate_loop(void *arg);
-void add_memtrace(bool is_write, long ip, long addr, long timestamp);
+void add_memtrace(const Record &r);

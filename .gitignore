@@ -5,4 +5,6 @@ tests/bin/*
 **/pin.log
 **/pintool.log
 **/pinatrace.out
+**/*.csv
+**/*.png
 **/__pycache__
