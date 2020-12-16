@@ -50,6 +50,7 @@ void simulate_loop(void *arg) {
 
     const std::vector<Record> &results = policy->results();
     // TODO fill buffers for graph
+    // foo
 }
 
 void add_memtrace(bool is_write, long ip, long addr, long timestamp) {
