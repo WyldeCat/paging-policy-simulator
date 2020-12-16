@@ -11,6 +11,37 @@ PagePolicy *policy;
 static PIN_MUTEX *sim_lock;
 std::queue<Record> record_queue;
 
+void write_results_csv(long num_interval, long end_ts, const char *path_name) {
+    const std::vector<Record> &results = policy->results();
+
+    long interval = (end_ts + num_interval - 1) / num_interval;
+    std::vector<size_t> num_access(num_interval, 0);
+    std::vector<size_t> num_miss(num_interval, 0);
+
+    for (const auto &result : results) {
+        long ts = result.time_stamp;
+        long idx = ts / interval;
+        num_access[idx]++;
+        num_miss[idx] += (result.is_hit == 0);
+    }
+
+    FILE *csv = fopen(path_name, "w");
+    if (csv == nullptr) {
+        perror("fopen");
+        assert(false);
+    }
+
+    for (long i = 0; i < num_interval; i++) {
+        fprintf(csv, "%ld, %ld, %ld\n", (i + 1) * interval, num_access[i], num_miss[i]);
+    }
+
+    int ret = fclose(csv);
+    if (ret != 0) {
+        perror("fclose");
+        assert(false);
+    }
+}
+
 void simulate_loop(void *arg) {
     simulate_args *args = (simulate_args *)arg;
 
@@ -45,14 +76,11 @@ void simulate_loop(void *arg) {
         sleep(0);
     }
 
-    constexpr long num_interval = 500;
-    long interval = (end_ts + num_interval - 1) / num_interval;
-
-    const std::vector<Record> &results = policy->results();
-    // TODO fill buffers for graph
-    // foo
+    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n");
+    fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
+    write_results_csv(1000, end_ts, "out.csv");
 }
 
-void add_memtrace(bool is_write, long ip, long addr, long timestamp) {
+void add_memtrace(int is_write, long ip, long addr, long timestamp) {
     record_queue.push({is_write, ip, addr, timestamp, 0});
 }

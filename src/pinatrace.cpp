@@ -12,6 +12,8 @@
 
 struct timeval start;
 PIN_MUTEX sim_lock;
+PIN_THREAD_UID uid;
+simulate_args args;
 
 long get_timestamp() {
     struct timeval now;
@@ -21,7 +23,7 @@ long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
-VOID send_record(long type, long ip, long addr, long timestamp)
+VOID send_record(int type, long ip, long addr, long timestamp)
 {
     while (!PIN_MutexTryLock(&sim_lock));
     add_memtrace(type, ip, addr, timestamp);
@@ -80,6 +82,15 @@ VOID Instruction(INS ins, VOID *v)
 VOID Fini(INT32 code, VOID *v)
 {
     send_record(2, 0, 0, get_timestamp());
+
+    fprintf(stderr, "[Simulator][INFO] Application Finished!\n");
+    fprintf(stderr, "[Simulator][INFO] Waiting for simulator to finish...\n");
+
+    BOOL ret;
+    INT32 exitcode;
+
+    ret = PIN_WaitForThreadTermination(uid, PIN_INFINITE_TIMEOUT, &exitcode);
+    assert(ret);
 }
 
 /* ===================================================================== */
@@ -97,7 +108,6 @@ INT32 Usage()
 /* Main                                                                  */
 /* ===================================================================== */
 
-simulate_args args;
 int main(int argc, char *argv[])
 {
     // HACK
@@ -115,7 +125,6 @@ int main(int argc, char *argv[])
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
 
-    PIN_THREAD_UID uid;
     THREADID tid = PIN_SpawnInternalThread(simulate_loop, &args, 0, &uid);
     assert(tid != INVALID_THREADID);
 

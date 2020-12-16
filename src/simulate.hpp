@@ -19,4 +19,4 @@ struct simulate_args {
 };
 
 void simulate_loop(void *arg);
-void add_memtrace(bool is_write, long ip, long addr, long timestamp);
+void add_memtrace(int is_write, long ip, long addr, long timestamp);

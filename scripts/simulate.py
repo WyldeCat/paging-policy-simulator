@@ -11,9 +11,14 @@ parser.add_argument('--target', required=True, type = str, help = 'target progra
 def main():
     args = parser.parse_args()
 
-    proc = subprocess.Popen([os.environ["PIN_ROOT"] + "/pin", "-t",
-        "../obj/pps.so", str(args.mem), str(args.policy), "--", args.target], cwd="./")
-    proc.wait()
+    cmd = os.environ["PIN_ROOT"] + "/pin -t ../obj/pps.so " + str(args.mem) + " " + str(args.policy) + " -- " + args.target
+    proc = subprocess.Popen("exec " + cmd, cwd="./", shell=True)
+
+    try:
+        proc.wait()
+    except:
+        proc.kill()
+        os.exit(1)
 
     # TODO visualize results
 
