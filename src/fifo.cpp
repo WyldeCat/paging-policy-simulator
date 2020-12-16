@@ -4,7 +4,7 @@
 
 FIFO::FIFO(size_t mem_size) : PagePolicy(mem_size), count_(0) { }
 
-bool FIFO::add_memtrace_(const Record &record) {
+int FIFO::add_memtrace_(const Record &record) {
     long vpn = record.addr << 14;
     if (vpn_to_index_.find(vpn) == vpn_to_index_.end()) {
         count_++;

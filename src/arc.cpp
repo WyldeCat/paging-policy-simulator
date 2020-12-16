@@ -8,7 +8,7 @@ ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) {
 	P = C/2;
 }
 
-bool ARC::add_memtrace_(const Record &record) {
+int ARC::add_memtrace_(const Record &record) {
     count_++;
     long vpn = record.addr << 14;
     int index;

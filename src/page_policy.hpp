@@ -86,7 +86,7 @@ public:
     virtual const char *name() override { return "FIFO"; }
 
 private:
-    virtual bool add_memtrace_(const Record &record) override;
+    virtual int add_memtrace_(const Record &record) override;
     std::map<long, size_t> vpn_to_index_;
     std::map<size_t, long> index_to_vpn_;
     size_t count_;
@@ -98,7 +98,7 @@ public:
     virtual const char *name() override { return "ARC"; }
 
 private:
-    virtual bool add_memtrace_(const Record &record) override;
+    virtual int add_memtrace_(const Record &record) override;
     void decrease_P();
     void increase_P();
     void replace(long vpn);
