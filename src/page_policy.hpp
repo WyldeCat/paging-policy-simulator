@@ -39,3 +39,16 @@ private:
     std::map<size_t, long> index_to_vpn_;
     size_t count_;
 };
+
+class FIFO : public PagePolicy {
+public:
+    FIFO(size_t mem_size);
+    virtual const char *name() override { return "FIFO"; }
+
+private:
+    virtual bool add_memtrace_(const Record &record) override;
+    std::map<long, size_t> vpn_to_index_;
+    std::map<size_t, long> index_to_vpn_;
+    size_t count_;
+};
+
