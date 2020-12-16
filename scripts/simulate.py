@@ -9,7 +9,7 @@ parser.add_argument('--mem', default = 4096, type = int, help = 'memory size(MB)
 parser.add_argument('--num_buffer', default = 2, type = int, help = 'num buffer')
 parser.add_argument('--size_buffer', default = 128, type = int, help = 'buffer size(M)')
 
-parser.add_argument('--policy', default = 'LRU', type = str, choices=['FIFO', 'LRU', 'LFU'], help = 'paging policy')
+parser.add_argument('--policy', default = 'LRU', type = str, choices=['FIFO', 'LRU', 'LFU', 'ARC', 'CLOCK_PRO'], help = 'paging policy')
 parser.add_argument('--target', required=True, type = str, help = 'target program')
 
 def main():
