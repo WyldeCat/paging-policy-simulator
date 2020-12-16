@@ -14,6 +14,7 @@ struct timeval start;
 PIN_MUTEX sim_lock;
 PIN_THREAD_UID uid;
 simulate_args args;
+volatile extern bool is_initialized;
 
 long get_timestamp() {
     struct timeval now;
@@ -23,10 +24,11 @@ long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
-VOID send_record(int type, long ip, long addr, long timestamp)
+VOID send_record(int type, long ip, long addr, long time_stamp)
 {
+    Record r{type, ip, addr, time_stamp, 0};
     while (!PIN_MutexTryLock(&sim_lock));
-    add_memtrace(type, ip, addr, timestamp);
+    add_memtrace(r);
     PIN_MutexUnlock(&sim_lock);
 }
 
@@ -113,10 +115,12 @@ int main(int argc, char *argv[])
     // HACK
     args.mem = argv[5];
     args.policy = argv[6];
-    args.lock = &sim_lock;
-    for (int i = 5; i < argc - 1; i++) {
-        argv[i] = argv[i + 2];
+    args.num_buffer = argv[7];
+    args.size_buffer = argv[8];
+    for (int i = 5; i < argc - 3; i++) {
+        argv[i] = argv[i + 4];
     }
+    argc -= 4;
 
     if (PIN_Init(argc, argv)) return Usage();
 
