@@ -5,7 +5,7 @@
 #include "pin.H"
 
 struct Record {
-    bool is_write;
+    int is_write;
     long ip;
     long addr;
     long time_stamp;

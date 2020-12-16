@@ -79,6 +79,7 @@ VOID Instruction(INS ins, VOID *v)
 
 VOID Fini(INT32 code, VOID *v)
 {
+    send_record(2, 0, 0, get_timestamp());
 }
 
 /* ===================================================================== */
