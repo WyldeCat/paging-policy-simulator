@@ -32,7 +32,7 @@ protected:
 class List {
 public:
 	List();
-	size_t count;
+	size_t index;
 	int find(long vpn);
 	void remove(long vpn);
 	void remove(size_t index, long vpn);
@@ -43,7 +43,6 @@ public:
 private:
 	std::map<long, size_t> vpn_to_index;
 	std::map<size_t, long> index_to_vpn;
-
 };
 
 
@@ -83,11 +82,11 @@ private:
     void increase_P();
     void replace(long vpn);
 
+    size_t count_;
     List T1, T2, B1, B2;
     size_t P;
     size_t C;
 };
-
 
 
 

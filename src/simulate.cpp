@@ -20,6 +20,12 @@ void simulate_loop(void *arg) {
 
     if (policy_name == "LRU") {
         policy = new LRU(mem);
+    } else if( policy_name == "ARC" ) {
+        policy = new ARC(mem);
+    } else if( policy_name == "FIFO" ) {
+        policy = new FIFO(mem);
+    } else if( policy_name == "LFU" ) {
+    } else if( policy_name == "CLOCK_PRO" ) {
     } else {
         fprintf(stderr, "[ERROR] Unknown Policy %s %zd\n",
             policy_name.c_str(), mem);

@@ -3,25 +3,25 @@
 #include <stdio.h>
 
 
-ARC::ARC(size_t mem_size) : PagePolicy(mem_size) { 
+ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) { 
 	C = max_num_page_;
 	P = C/2;
 }
 
 bool ARC::add_memtrace_(const Record &record) {
+    count_++;
     long vpn = record.addr << 14;
     int index;
-
     // case 1) page is in the cache(T1) : hit
     if( (index = T1.find(vpn)) != -1 ) {
         T1.remove(index, vpn);
 	T2.push(vpn);
-        return true;
+        return 1;
     // case 2) page is in the cache(T2) : hit
     } else if( (index = T2.find(vpn)) != -1 ) {
         T2.remove(index, vpn);
 	T2.push(vpn);
-        return true;
+        return 1;
     // case 3) page is in ghost cache(B1) : miss
     } else if( (index = B1.find(vpn)) != -1 ) {
 	increase_P();
@@ -29,17 +29,18 @@ bool ARC::add_memtrace_(const Record &record) {
 	// move page : B1 --> T2
 	B1.remove(index, vpn);
 	T2.push(vpn);
-        return false;
+        return 2;
     // case 4) page is in ghost cache(B2) : miss
     } else if( (index = B2.find(vpn)) != -1 ) {
 	decrease_P();
 	replace(vpn);
 	// move page : B2 --> T2
 	B2.remove(index, vpn);
-	T2.remove(vpn);
-        return false;
+	T2.push(vpn);
+        return 2;
     // case 5) page is not in both : miss
     } else {
+	int ret = 0;
 	size_t T1_size = T1.get_size();
 	size_t T2_size = T2.get_size();
 	size_t B1_size = B1.get_size();
@@ -56,6 +57,7 @@ bool ARC::add_memtrace_(const Record &record) {
 		} else {
 		    T1.pop();
 		}
+		ret = 2;
 	// if L1 (T1+B1) has less than c pages
 	} else if( L1_size < C ) {
       	    size_t total_size = T1_size + T2_size + B1_size + B2_size;
@@ -65,12 +67,14 @@ bool ARC::add_memtrace_(const Record &record) {
 		    B2.pop();
 		}
 		replace(vpn);
+		ret = 2;
 	    }	    
 	}
 
 	T1.push(vpn);
-        return false;
+        return ret;
     }
+
 }
 
 
@@ -111,25 +115,24 @@ void ARC::replace(long vpn) {
 
 ///////////////////////////////// List
 
-List::List() { count = 0; }
+List::List() { index = 0; }
 
 int List::find(long vpn) {
-    if (vpn_to_index.find(vpn) == vpn_to_index.end()) {
+    if ( vpn_to_index.find(vpn) == vpn_to_index.end()) {
         return -1;
     } else {
-	vpn_to_index[vpn] = count;
-    	return (int)count;
+    	return vpn_to_index[vpn];
     }
 }
 
 void List::remove(long vpn) {	
-    int index = vpn_to_index[vpn];
-    index_to_vpn.erase(index);
+    int _index = vpn_to_index[vpn];
+    index_to_vpn.erase(_index);
     vpn_to_index.erase(vpn);
 }
 
-void List::remove(size_t index, long vpn) {
-    index_to_vpn.erase(index);
+void List::remove(size_t _index, long vpn) {
+    index_to_vpn.erase(_index);
     vpn_to_index.erase(vpn);
 }
 
@@ -144,9 +147,9 @@ long List::pop() {
 }
 
 void List::push(long vpn) {
-    count++;
-    vpn_to_index[vpn] = count;
-    index_to_vpn[count] = vpn;
+    index++;
+    vpn_to_index[vpn] = index;
+    index_to_vpn[index] = vpn;
 }
 
 size_t List::get_size() {
