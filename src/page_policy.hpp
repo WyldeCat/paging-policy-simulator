@@ -4,6 +4,9 @@
 #include <string>
 #include <utility>
 
+// for LFU
+#include <set>
+
 #include "simulate.hpp"
 
 class PagePolicy {
@@ -38,4 +41,17 @@ private:
     std::map<long, size_t> vpn_to_index_;
     std::map<size_t, long> index_to_vpn_;
     size_t count_;
+};
+
+class LFU : public PagePolicy {
+public:
+    LFU(size_t mem_size);
+    virtual const char *name() override { return "LFU"; }
+
+private:
+    virtual bool add_memtrace_(const Record &record) override;
+
+    std::map<long, long> vpns_and_their_counts_;
+    std::map<long, set<long>> counts_;
+
 };
