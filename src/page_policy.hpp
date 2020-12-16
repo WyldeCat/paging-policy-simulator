@@ -28,6 +28,26 @@ protected:
     virtual bool add_memtrace_(const Record &record) = 0;
 };
 
+
+class List {
+public:
+	List();
+	size_t count;
+	int find(long vpn);
+	void remove(long vpn);
+	void remove(size_t index, long vpn);
+	long pop();
+	void push(long vpn);
+	size_t get_size();
+
+private:
+	std::map<long, size_t> vpn_to_index;
+	std::map<size_t, long> index_to_vpn;
+
+};
+
+
+
 class LRU : public PagePolicy {
 public:
     LRU(size_t mem_size);
@@ -51,4 +71,23 @@ private:
     std::map<size_t, long> index_to_vpn_;
     size_t count_;
 };
+
+class ARC: public PagePolicy {
+public:
+    ARC(size_t mem_size);
+    virtual const char *name() override { return "ARC"; }
+
+private:
+    virtual bool add_memtrace_(const Record &record) override;
+    void decrease_P();
+    void increase_P();
+    void replace(long vpn);
+
+    List T1, T2, B1, B2;
+    size_t P;
+    size_t C;
+};
+
+
+
 
