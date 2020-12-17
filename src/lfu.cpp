@@ -15,11 +15,11 @@ int LFU::add_memtrace_(const Record &record)
     {
 
         // case 0 : the cache is full
-        if (vpns_and_their_counts.size() == max_num_page_)
+        if (vpns_and_their_counts_.size() == max_num_page_)
         {
             // find the target to evict
             long smallest_count = counts_.begin()->first;
-            set<long> set_with_the_count = counts_.begin()->second;
+            std::set<long> set_with_the_count = counts_.begin()->second;
             long target = set_with_the_count.begin();
 
             // if there's no left vpn for the count
@@ -47,7 +47,7 @@ int LFU::add_memtrace_(const Record &record)
             // if there is a room
             else
             {
-                set<long> set_for_count_1 = counts_[1];
+                std::set<long> set_for_count_1 = counts_[1];
                 set_for_count_1.insert(vpn);
             }
             vpns_and_their_counts_.insert(std::pair<long, long>(vpn, 1));
@@ -59,7 +59,7 @@ int LFU::add_memtrace_(const Record &record)
     else
     {
         long count_for_the_vpn = vpns_and_their_counts_[vpn];
-        set<long> set_for_the_count = counts_[count_for_the_vpn];
+        std::set<long> set_for_the_count = counts_[count_for_the_vpn];
         set_for_the_count.erase(count_for_the_vpn);
 
         count_for_the_vpn++;
@@ -73,7 +73,7 @@ int LFU::add_memtrace_(const Record &record)
         // if there is a room
         else
         {
-            set<long> set_for_count_incr_ = counts_[count_for_the_vpn];
+            std::set<long> set_for_count_incr_ = counts_[count_for_the_vpn];
             set_for_count_incr_.insert(vpn);
         }
 

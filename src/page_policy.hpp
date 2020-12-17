@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <list>
+#include <set>
 
 #include "simulate.hpp"
 
@@ -119,7 +120,7 @@ private:
     virtual int add_memtrace_(const Record &record) override;
 
     std::map<long, long> vpns_and_their_counts_;
-    std::map<long, set<long>> counts_;
+    std::map<long, std::set<long>> counts_;
 
 };
 
@@ -154,6 +155,8 @@ private:
     size_t max_size_; // m
     size_t max_cold_; // m
 
+    float hot_size_ratio_;
+
     std::list<std::pair<long, char>> meta_data_;
 
     // char: 0 for bit false, 1 for bit true, 2 for discard
@@ -177,7 +180,7 @@ private:
 
     void hot_action();
     void cold_action();
-    void test_cation();
+    void test_action();
 
     bool is_evicted;
 };

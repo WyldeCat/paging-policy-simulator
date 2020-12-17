@@ -2,11 +2,9 @@
 
 #include <stdio.h>
 
-// 0을 return하면 miss, 1을 return하면 hit, 2를 return하면 miss+eviction
-
 CLOCKPRO::CLOCKPRO(size_t mem_size) : PagePolicy(mem_size)
 {
-    hot_size_ratio = 0.5;
+    hot_size_ratio_ = 0.5;
     hot_size_ = mem_size_ * hot_size_ratio_;
     cold_size_ = mem_size_ - hot_size_;
 
@@ -162,7 +160,7 @@ void CLOCKPRO::cold_action()
     }
 }
 
-void CLOCKPRO::hot_action(long current_page_num)
+void CLOCKPRO::hot_action()
 {
     if (hand_hot_ == hand_test_)
         test_action();
