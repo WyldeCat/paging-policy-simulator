@@ -15,6 +15,7 @@ PIN_MUTEX sim_lock;
 PIN_THREAD_UID uid;
 simulate_args args;
 volatile extern bool is_initialized;
+size_t curr = 0;
 
 long get_timestamp() {
     struct timeval now;
@@ -24,26 +25,32 @@ long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
-VOID send_record(int type, long ip, long addr, long time_stamp)
+VOID send_record(int type, long ip, long addr)
 {
-    Record r{type, ip, addr, time_stamp, 0};
+    Record r{type, ip, addr, 0};
     while (!PIN_MutexTryLock(&sim_lock));
+    if (start.tv_usec == 0 && start.tv_sec == 0) {
+        r.time_stamp = 0;
+    }
+    else {
+        r.time_stamp = curr + get_timestamp();
+        curr = r.time_stamp;
+    }
     add_memtrace(r);
+    gettimeofday(&start, NULL);
     PIN_MutexUnlock(&sim_lock);
 }
 
 // Print a memory read record
 VOID RecordMemRead(VOID * ip, VOID * addr)
 {
-    long timestamp = get_timestamp();
-    send_record(0, (long)ip, (long)addr, timestamp);
+    send_record(0, (long)ip, (long)addr);
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID * ip, VOID * addr)
 {
-    long timestamp = get_timestamp();
-    send_record(1, (long)ip, (long)addr, timestamp);
+    send_record(1, (long)ip, (long)addr);
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -83,7 +90,7 @@ VOID Instruction(INS ins, VOID *v)
 
 VOID Fini(INT32 code, VOID *v)
 {
-    send_record(2, 0, 0, get_timestamp());
+    send_record(2, 0, 0);
 
     fprintf(stderr, "[Simulator][INFO] Application Finished!\n");
     fprintf(stderr, "[Simulator][INFO] Waiting for simulator to finish...\n");

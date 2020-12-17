@@ -22,12 +22,12 @@ public:
         record.is_hit = (ret == 1);
         total_hit_ += (ret == 1);
         total_eviction_ += (ret == 2);
-        results_.emplace_back(std::move(record));
-        evictions_.push_back((ret == 2));
+        results_.push_back(record);
+        evictions_.push_back(ret == 2);
     }
 
     const std::vector<Record> &results() { return results_; }
-    const std::vector<bool> &evictions() { return evictions_; }
+    const std::vector<int> &evictions() { return evictions_; }
     virtual const char *name() = 0;
 
     long total_access() { return total_access_; }
@@ -40,7 +40,7 @@ protected:
     size_t mem_size_;
     size_t max_num_page_;
     std::vector<Record> results_;
-    std::vector<bool> evictions_;
+    std::vector<int> evictions_;
 
     long total_access_;
     long total_hit_;
