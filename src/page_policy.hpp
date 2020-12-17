@@ -134,18 +134,18 @@ public:
 private:
     virtual int add_memtrace_(const Record &record) override;
 
-    const char type_cold = 0;
-    const char type_hot = 1;
-    const char type_test = 2;
-    const char type_none = 4;
+     char type_cold = 0;
+     char type_hot = 1;
+     char type_test = 2;
+     char type_none = 4;
 
-    const char reference_bit_false = 0;
-    const char reference_bit_true = 1;
-    const char page_discarded = 2;
+     char reference_bit_false = 0;
+     char reference_bit_true = 1;
+     char page_discarded = 2;
 
-    const int miss = 0;
-    const int hit = 1;
-    const int miss_with_eviction = 2;
+     int miss = 0;
+     int hit = 1;
+     int miss_with_eviction = 2;
 
     // sizes
     size_t mem_hot_;  // m_h == number of hot pages
@@ -157,7 +157,7 @@ private:
 
     float hot_size_ratio_;
 
-    std::list<std::pair<long, char>> meta_data_;
+    std::vector<std::pair<long, char>> meta_data_;
 
     // char: 0 for bit false, 1 for bit true, 2 for discard
     std::map<long, char> data_cache_;
@@ -181,6 +181,11 @@ private:
     void hot_action();
     void cold_action();
     void test_action();
+    void evict_pages_();
+
+
+    void delete_meta_data_(long vpn, char page_type);
+    void add_meta_data_(long vpn, char page_type);
 
     bool is_evicted;
 };

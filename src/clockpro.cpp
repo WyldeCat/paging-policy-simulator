@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+using namespace std;
+
 CLOCKPRO::CLOCKPRO(size_t mem_size) : PagePolicy(mem_size)
 {
     hot_size_ratio_ = 0.5;
@@ -26,7 +28,7 @@ int CLOCKPRO::add_memtrace_(const Record &record)
     // check if the page is in the list
     if (data_cache_.find(vpn) != data_cache_.end())
     {
-        if (data_cache_[vpn] != data_discarded)
+        if (data_cache_[vpn] != page_discarded)
         {
             if (cold_count_ < max_size_)
                 cold_count_++;
@@ -34,25 +36,25 @@ int CLOCKPRO::add_memtrace_(const Record &record)
             data_cache_[vpn] = reference_bit_false;
 
             // test
-            delete_meta_data_(new std::pair<long, char>(vpn, type_test));
+            delete_meta_data_(vpn, type_test);
             test_count_--;
 
-            add_meta_data_(new std::pair<long, char>(vpn, type_hot));
+            add_meta_data_(vpn, type_hot);
             hot_count_++;
 
             return hit;
         }
         else
         {
-            data_cache_[key] = reference_bit_true;
-            return miss;
+            data_cache_[vpn] = reference_bit_true;
+            return hit;
         }
     }
 
     else
     {
         data_cache_[vpn] = reference_bit_false;
-        add_meta_data_(new std::pair<long, char>(vpn, type_cold));
+        add_meta_data_(vpn, type_cold);
         cold_count_++;
 
         if(is_evicted) return miss_with_eviction;
@@ -60,11 +62,12 @@ int CLOCKPRO::add_memtrace_(const Record &record)
     }
 }
 
-void CLOCKPRO::delete_meta_data_(pair<long, char> meta_datum)
+void CLOCKPRO::delete_meta_data_(long vpn, char page_type)
 {
+    std::pair<long, char> meta_datum = make_pair(vpn, char);
     size_t meta_index = meta_data_.find(meta_datum);
     meta_data_.erase(meta_datum);
-    int max_position = meta_data_.size() - 1;
+    size_t max_position = meta_data_.size() - 1;
 
     // if the hot hand
     if (hand_hot_ >= meta_index)
@@ -89,11 +92,13 @@ void CLOCKPRO::delete_meta_data_(pair<long, char> meta_datum)
     }
 }
 
-void CLOCKPRO::add_meta_data_(pair<long, char> meta_datum)
+void CLOCKPRO::add_meta_data_(long vpn, char page_type)
 {
+    pair<long, char> meta_datum = make_pair(vpn, page_type);
     evict_pages_();
-    meta_data_.insert(hand_hot_, meta_datum);
-    int max_position = meta_data_.size();
+    
+    meta_data_.insert(meta_data_.begin() + hand_hot_, meta_datum);
+    size_t max_position = meta_data_.size();
 
     if (hand_cold_ > hand_hot_)
     {
@@ -102,7 +107,7 @@ void CLOCKPRO::add_meta_data_(pair<long, char> meta_datum)
             hand_cold_ = 0;
     }
 
-    if (hand_test_ > hand_hot)
+    if (hand_test_ > hand_hot_)
     {
         hand_test_++;
         if (hand_test_ > max_position)
@@ -124,7 +129,7 @@ void CLOCKPRO::evict_pages_()
 
 void CLOCKPRO::cold_action()
 {
-    std::pair<long, char> meta_datum = meta_data[hand_cold_];
+    std::pair<long, char> meta_datum = meta_data_[hand_cold_];
     long current_page_num = meta_datum.first;
     // if cold
     if (meta_datum.second == type_cold)
@@ -169,7 +174,7 @@ void CLOCKPRO::hot_action()
     long current_page_num = meta_datum.first;
 
     // if hot
-    if (meta_datum.second = 1)
+    if (meta_datum.second == 1)
     {
         // set the reference bit
         if (data_cache_[current_page_num] == reference_bit_true)
@@ -197,10 +202,11 @@ void CLOCKPRO::test_action()
         
     std::pair<long, size_t> meta_datum = meta_data_[hand_test_];
     //if test
+    
     if (meta_datum.second == type_test)
     {
         data_cache_.erase(meta_datum.first);
-        delete_meta_data_(meta_datum);
+        delete_meta_data_(meta_datum.first, meta_datum.second);
         test_count_--;
         if (max_cold_ > 1)
             max_cold_--;

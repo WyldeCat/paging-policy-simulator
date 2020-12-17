@@ -3,6 +3,7 @@
 #include "page_policy.hpp"
 
 #include <stdio.h>
+using namespace std;
 
 LFU::LFU(size_t mem_size) : PagePolicy(mem_size) {}
 
@@ -19,9 +20,10 @@ int LFU::add_memtrace_(const Record &record)
         {
             // find the target to evict
             long smallest_count = counts_.begin()->first;
-            std::set<long> set_with_the_count = counts_.begin()->second;
-            long target = set_with_the_count.begin();
-
+            set<long> set_with_the_count = counts_.begin()->second;
+            auto first = set_with_the_count.begin();
+            long target = *first;
+            
             // if there's no left vpn for the count
             if (set_with_the_count.size() == 1)
             {
@@ -41,7 +43,7 @@ int LFU::add_memtrace_(const Record &record)
             // if there is no room for "1"
             if (counts_.find(1) == counts_.end())
             {
-                counts_.insert(std::pair<long, long>(1, std::set<long>{vpn}));
+                counts_.insert(make_pair(1, std::set<long>{vpn}));
             }
 
             // if there is a room
