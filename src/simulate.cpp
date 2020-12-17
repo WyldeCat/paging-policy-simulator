@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <queue>
 #include <unistd.h>
 
 PagePolicy *policy;
@@ -13,7 +14,7 @@ PagePolicy *policy;
 std::vector<std::vector<Record>> record_queue;
 PIN_MUTEX lock;
 std::set<int> buf_free;
-std::set<int> buf_full;
+std::queue<int> buf_full;
 size_t curr_idx = 0;
 size_t curr_cnt = 0;
 bool terminate = false;
@@ -104,8 +105,8 @@ void simulate_loop(void *arg) {
             sleep(1);
             continue;
         } else {
-            target = *buf_full.begin();
-            buf_full.erase(target);
+            target = buf_full.front();
+            buf_full.pop();
         }
         PIN_MutexUnlock(&lock);
 
@@ -128,7 +129,9 @@ void simulate_loop(void *arg) {
         policy->add_memtrace(record_queue[curr_idx][i]);
     }
 
-    for (int f : buf_full) {
+    while (!buf_full.empty()) {
+        int f = buf_full.front();
+        buf_full.pop();
         for (auto &r : record_queue[f]) {
             if (r.is_write == 2) end_ts = r.time_stamp;
             policy->add_memtrace(r);
@@ -160,8 +163,7 @@ void add_memtrace(const Record &r) {
         int next = 0;
 
         while (!PIN_MutexTryLock(&lock));
-        fprintf(stderr, "- insert full!! %zd\n", curr_idx);
-        buf_full.insert(curr_idx);
+        buf_full.push(curr_idx);
         PIN_MutexUnlock(&lock);
 
         while (true) {
