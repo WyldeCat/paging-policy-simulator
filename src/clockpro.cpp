@@ -4,8 +4,9 @@
 
 // 0을 return하면 miss, 1을 return하면 hit, 2를 return하면 miss+eviction
 
-CLOCKPRO::CLOCKPRO(size_t mem_size, size_t hot_size_ratio) : PagePolicy(mem_size), hot_size_ratio_(hot_size_ratio)
+CLOCKPRO::CLOCKPRO(size_t mem_size) : PagePolicy(mem_size)
 {
+    hot_size_ratio = 0.5;
     hot_size_ = mem_size_ * hot_size_ratio_;
     cold_size_ = mem_size_ - hot_size_;
 

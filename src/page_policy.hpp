@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <list>
 
 #include "simulate.hpp"
 
@@ -109,6 +110,19 @@ private:
     size_t C;
 };
 
+class LFU : public PagePolicy {
+public:
+    LFU(size_t mem_size);
+    virtual const char *name() override { return "LFU"; }
+
+private:
+    virtual int add_memtrace_(const Record &record) override;
+
+    std::map<long, long> vpns_and_their_counts_;
+    std::map<long, set<long>> counts_;
+
+};
+
 class CLOCKPRO : public PagePolicy
 {
 
@@ -154,6 +168,10 @@ private:
     size_t hot_count_;
     size_t cold_count_;
     size_t test_count_;
+
+    size_t hot_size_;
+    size_t cold_size_;
+
 
     // rest_values
 

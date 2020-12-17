@@ -6,7 +6,7 @@
 
 LFU::LFU(size_t mem_size) : PagePolicy(mem_size) {}
 
-bool LFU::add_memtrace_(const Record &record)
+int LFU::add_memtrace_(const Record &record)
 {
     long vpn = record.addr << 14;
 
@@ -52,7 +52,7 @@ bool LFU::add_memtrace_(const Record &record)
             }
             vpns_and_their_counts_.insert(std::pair<long, long>(vpn, 1));
         }
-        return false;
+        return 0;
     }
 
     // if the page is present
@@ -77,6 +77,6 @@ bool LFU::add_memtrace_(const Record &record)
             set_for_count_incr_.insert(vpn);
         }
 
-        return true;
+        return 1;
     }
 }
