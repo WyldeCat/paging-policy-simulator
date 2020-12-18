@@ -57,16 +57,23 @@ int CLOCKPRO::add_memtrace_(const Record &record)
         add_meta_data_(vpn, type_cold);
         cold_count_++;
 
-        if(is_evicted) return miss_with_eviction;
-        else return miss;
+        if (is_evicted)
+            return miss_with_eviction;
+        else
+            return miss;
     }
 }
 
 void CLOCKPRO::delete_meta_data_(long vpn, char page_type)
 {
-    std::pair<long, char> meta_datum = make_pair(vpn, char);
-    size_t meta_index = meta_data_.find(meta_datum);
-    meta_data_.erase(meta_datum);
+    std::pair<long, char> meta_datum = make_pair(vpn, page_type);
+
+    //  std::vector<std::pair<long, char>> meta_data_;
+    //  FIXME: doesn't have find
+    vector<pair<long,char>>::iterator meta_data_finder = find(meta_data_.begin(), meta_data_.end(), meta_datum);
+
+    size_t meta_index = distance(meta_data_.begin(), meta_data_finder);
+    meta_data_.erase(meta_data_.begin() + meta_index);
     size_t max_position = meta_data_.size() - 1;
 
     // if the hot hand
@@ -96,7 +103,7 @@ void CLOCKPRO::add_meta_data_(long vpn, char page_type)
 {
     pair<long, char> meta_datum = make_pair(vpn, page_type);
     evict_pages_();
-    
+
     meta_data_.insert(meta_data_.begin() + hand_hot_, meta_datum);
     size_t max_position = meta_data_.size();
 
@@ -121,7 +128,8 @@ void CLOCKPRO::add_meta_data_(long vpn, char page_type)
 
 void CLOCKPRO::evict_pages_()
 {
-    while (max_size_ <= cold_count_ + hot_count_){
+    while (max_size_ <= cold_count_ + hot_count_)
+    {
         cold_action();
         is_evicted = true;
     }
@@ -199,10 +207,10 @@ void CLOCKPRO::test_action()
 {
     if (hand_test_ == hand_cold_)
         cold_action();
-        
-    std::pair<long, size_t> meta_datum = meta_data_[hand_test_];
+
+    pair<long, char> meta_datum = meta_data_[hand_test_];
     //if test
-    
+
     if (meta_datum.second == type_test)
     {
         data_cache_.erase(meta_datum.first);
