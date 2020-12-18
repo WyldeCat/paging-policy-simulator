@@ -5,80 +5,110 @@
 #include <stdio.h>
 using namespace std;
 
-LFU::LFU(size_t mem_size) : PagePolicy(mem_size) {}
+LFU::LFU(size_t mem_size) : PagePolicy(mem_size)
+{
+    cache_max_size_ = mem_size_;
+    cache_size_ = 0;
+    cache_ = vector<pair<long, size_t>>(cache_max_size_);
+    indices_ = map<long, size_t>();
+}
 
 int LFU::add_memtrace_(const Record &record)
 {
     long vpn = record.addr << 14;
+    refer(cache_, indices_, vpn);
+    return 0;
+}
 
-    // if the page isn't present
-    if (vpns_and_their_counts_.find(vpn) == vpns_and_their_counts_.end())
+void LFU::swap(pair<long, size_t> &a, pair<long, size_t> &b)
+{
+    pair<long, size_t> temp = a;
+    a = b;
+    b = temp;
+}
+
+size_t LFU::get_parent_index(size_t i)
+{
+    return (i - 1) / 2;
+}
+
+size_t LFU::get_left_child_index(size_t i)
+{
+    return (2 * i) + 1;
+}
+
+size_t LFU::get_right_child_index(size_t i)
+{
+    return (2 * i) + 2;
+}
+
+void LFU::heapify(vector<pair<long, size_t>> &v, map<long, size_t> &m, size_t i)
+{
+    size_t l = get_left_child_index(i);
+    size_t r = get_right_child_index(i);
+    size_t minimum = 0;
+
+    if (l < cache_size_)
     {
-
-        // case 0 : the cache is full
-        if (vpns_and_their_counts_.size() == max_num_page_)
-        {
-            // find the target to evict
-            long smallest_count = counts_.begin()->first;
-            set<long> set_with_the_count = counts_.begin()->second;
-            auto first = set_with_the_count.begin();
-            long target = *first;
-            
-            // if there's no left vpn for the count
-            if (set_with_the_count.size() == 1)
-            {
-                counts_.erase(smallest_count);
-            }
-
-            // if there are more than 2 vpns
-            else
-            {
-                set_with_the_count.erase(target);
-                vpns_and_their_counts_.erase(target);
-            }
-
-            // now the eviction is finished
-            // let's add the new page
-
-            // if there is no room for "1"
-            if (counts_.find(1) == counts_.end())
-            {
-                counts_.insert(make_pair(1, std::set<long>{vpn}));
-            }
-
-            // if there is a room
-            else
-            {
-                std::set<long> set_for_count_1 = counts_[1];
-                set_for_count_1.insert(vpn);
-            }
-            vpns_and_their_counts_.insert(std::pair<long, long>(vpn, 1));
-        }
-        return 0;
-    }
-
-    // if the page is present
-    else
-    {
-        long count_for_the_vpn = vpns_and_their_counts_[vpn];
-        std::set<long> set_for_the_count = counts_[count_for_the_vpn];
-        set_for_the_count.erase(count_for_the_vpn);
-
-        count_for_the_vpn++;
-
-        // if there is no room for "count+1"
-        if (counts_.find(count_for_the_vpn) == counts_.end())
-        {
-            counts_.insert(std::pair<long, long>(count_for_the_vpn, std::set<long>{vpn}));
-        }
-
-        // if there is a room
+        if (v[i].second < v[l].second)
+            minimum = i;
         else
-        {
-            std::set<long> set_for_count_incr_ = counts_[count_for_the_vpn];
-            set_for_count_incr_.insert(vpn);
-        }
-
-        return 1;
+            minimum = 1;
     }
+    else
+        minimum = i;
+
+    if (r < cache_size_)
+    {
+        if (v[minimum].second >= v[r].second)
+            minimum = r;
+    }
+
+    if (minimum != i)
+    {
+        m[v[minimum].first] = i;
+        m[v[i].first] = minimum;
+        swap(v[minimum], v[i]);
+        heapify(v, m, minimum);
+    }
+}
+
+void LFU::increment(vector<pair<long, size_t>> &v, map<long, size_t> &m, size_t i)
+{
+    ++v[i].second;
+    heapify(v, m, i);
+}
+
+void LFU::insert(vector<pair<long, size_t>> &v,
+            map<long, size_t> &m, long value)
+{
+
+    if (cache_size_ == v.size())
+    {
+        m.erase(v[0].first);
+        //cache block erased
+        v[0] = v[--cache_size_];
+        heapify(v, m, 0);
+    }
+    v[cache_size_++] = make_pair(value, 1);
+    m.insert(make_pair(value, cache_size_ - 1));
+    long i = cache_size_ - 1;
+
+    // Insert a node in the heap by swapping elements
+    while (i && v[get_parent_index(i)].second > v[i].second)
+    {
+        m[v[i].first] = get_parent_index(i);
+        m[v[get_parent_index(i)].first] = i;
+        swap(v[i], v[get_parent_index(i)]);
+        i = get_parent_index(i);
+    }
+    //cache block value inserted
+}
+
+void LFU::refer(vector<pair<long, size_t>> &cache, map<long, size_t> &indices, long value)
+{
+    if (indices.find(value) == indices.end())
+        insert(cache, indices, value);
+    else
+        increment(cache, indices, indices[value]);
 }
