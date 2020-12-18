@@ -1,8 +1,8 @@
 // LFU implementation
 
 #include "page_policy.hpp"
-
 #include <stdio.h>
+
 using namespace std;
 
 LFU::LFU(size_t mem_size) : PagePolicy(mem_size)
@@ -11,13 +11,25 @@ LFU::LFU(size_t mem_size) : PagePolicy(mem_size)
     cache_size_ = 0;
     cache_ = vector<pair<long, size_t>>(cache_max_size_);
     indices_ = map<long, size_t>();
+    is_evicted_ = false;
 }
 
 int LFU::add_memtrace_(const Record &record)
 {
     long vpn = record.addr << 14;
-    refer(cache_, indices_, vpn);
-    return 0;
+    if (indices_.find(vpn) == indices_.end())
+    {
+        insert(cache_, indices_, vpn);
+        if (is_evicted_)
+            return miss_with_eviction;
+        else
+            return miss;
+    }
+    else
+    {
+        increment(cache_, indices_, indices_[vpn]);
+        return hit;
+    }
 }
 
 void LFU::swap(pair<long, size_t> &a, pair<long, size_t> &b)
@@ -80,21 +92,19 @@ void LFU::increment(vector<pair<long, size_t>> &v, map<long, size_t> &m, size_t 
 }
 
 void LFU::insert(vector<pair<long, size_t>> &v,
-            map<long, size_t> &m, long value)
+                 map<long, size_t> &m, long value)
 {
-
     if (cache_size_ == v.size())
     {
         m.erase(v[0].first);
-        //cache block erased
         v[0] = v[--cache_size_];
         heapify(v, m, 0);
+        is_evicted_ = true;
     }
     v[cache_size_++] = make_pair(value, 1);
     m.insert(make_pair(value, cache_size_ - 1));
     long i = cache_size_ - 1;
 
-    // Insert a node in the heap by swapping elements
     while (i && v[get_parent_index(i)].second > v[i].second)
     {
         m[v[i].first] = get_parent_index(i);
@@ -102,13 +112,4 @@ void LFU::insert(vector<pair<long, size_t>> &v,
         swap(v[i], v[get_parent_index(i)]);
         i = get_parent_index(i);
     }
-    //cache block value inserted
-}
-
-void LFU::refer(vector<pair<long, size_t>> &cache, map<long, size_t> &indices, long value)
-{
-    if (indices.find(value) == indices.end())
-        insert(cache, indices, value);
-    else
-        increment(cache, indices, indices[value]);
 }
