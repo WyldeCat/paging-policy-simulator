@@ -13,6 +13,7 @@ public:
         total_access_ = 0;
         total_hit_ = 0;
         total_eviction_ = 0;
+        is_eviction_happend_ = false;
     }
 
     void add_memtrace(Record &record) {
@@ -24,6 +25,11 @@ public:
         total_eviction_ += (ret == 2);
         results_.push_back(record);
         evictions_.push_back(ret == 2);
+
+        if (ret == 2 && is_eviction_happend_ == false) {
+            is_eviction_happend_ = true;
+            first_eviction_ = total_access_;
+        }
     }
 
     const std::vector<Record> &results() { return results_; }
@@ -34,6 +40,10 @@ public:
     long total_hit() { return total_hit_; }
     long total_miss() { return total_access_ - total_hit_; }
     long total_eviction() { return total_eviction_; }
+    long after_eviction() {
+        if (!is_eviction_happend_) return 0;
+        return total_access_ - first_eviction_ + 1;
+    }
 
 protected:
     static constexpr size_t page_size = 4;
@@ -45,6 +55,8 @@ protected:
     long total_access_;
     long total_hit_;
     long total_eviction_;
+    long first_eviction_;
+    bool is_eviction_happend_ = false;
 
     virtual int add_memtrace_(const Record &record) = 0;
 };
@@ -65,8 +77,6 @@ private:
 	std::map<long, size_t> vpn_to_index;
 	std::map<size_t, long> index_to_vpn;
 };
-
-
 
 class LRU : public PagePolicy {
 public:

@@ -154,11 +154,16 @@ void simulate_loop(void *arg) {
     fprintf(stderr, "[Simulator][INFO]       Elapsed(ms) : %f\n", end_ts / 1000.0);
     fprintf(stderr, "[Simulator][INFO] Total elapsed(ms) : %f\n", total / 1000.0);
     fprintf(stderr, "[Simulator][INFO]  Total mem access : %ld\n", policy->total_access());
+    fprintf(stderr, "[Simulator][INFO]access after evict : %ld\n", policy->after_eviction());
     fprintf(stderr, "[Simulator][INFO]               hit : %ld\n", policy->total_hit());
     fprintf(stderr, "[Simulator][INFO]              miss : %ld\n", policy->total_miss());
     fprintf(stderr, "[Simulator][INFO]          eviction : %ld\n", policy->total_eviction());
     fprintf(stderr, "[Simulator][INFO]         Hit ratio : %f\n\n",
         1.0 * policy->total_hit() / policy->total_access());
+    if (policy->after_eviction() != 0) {
+        fprintf(stderr, "[Simulator][INFO]        Hit ratio' : %f\n\n",
+            1.0 - 1.0 * policy->total_eviction() / policy->after_eviction());
+    }
 
     fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
     write_results_csv(std::atoi(sim_args->num_interval), end_ts, sim_args->csv_out);
