@@ -8,16 +8,19 @@
 
 #include "simulate.hpp"
 
-class PagePolicy {
+class PagePolicy
+{
 public:
-    PagePolicy(size_t mem_size) : mem_size_(mem_size) {
+    PagePolicy(size_t mem_size) : mem_size_(mem_size)
+    {
         max_num_page_ = mem_size_ / page_size;
         total_access_ = 0;
         total_hit_ = 0;
         total_eviction_ = 0;
     }
 
-    void add_memtrace(Record &record) {
+    void add_memtrace(Record &record)
+    {
         total_access_++;
 
         int ret = add_memtrace_(record);
@@ -51,26 +54,25 @@ protected:
     virtual int add_memtrace_(const Record &record) = 0;
 };
 
-
-class List {
+class List
+{
 public:
-	List();
-	size_t index;
-	int find(long vpn);
-	void remove(long vpn);
-	void remove(size_t index, long vpn);
-	long pop();
-	void push(long vpn);
-	size_t get_size();
+    List();
+    size_t index;
+    int find(long vpn);
+    void remove(long vpn);
+    void remove(size_t index, long vpn);
+    long pop();
+    void push(long vpn);
+    size_t get_size();
 
 private:
-	std::map<long, size_t> vpn_to_index;
-	std::map<size_t, long> index_to_vpn;
+    std::map<long, size_t> vpn_to_index;
+    std::map<size_t, long> index_to_vpn;
 };
 
-
-
-class LRU : public PagePolicy {
+class LRU : public PagePolicy
+{
 public:
     LRU(size_t mem_size);
     virtual const char *name() override { return "LRU"; }
@@ -82,7 +84,8 @@ private:
     size_t count_;
 };
 
-class FIFO : public PagePolicy {
+class FIFO : public PagePolicy
+{
 public:
     FIFO(size_t mem_size);
     virtual const char *name() override { return "FIFO"; }
@@ -94,7 +97,8 @@ private:
     size_t count_;
 };
 
-class ARC: public PagePolicy {
+class ARC : public PagePolicy
+{
 public:
     ARC(size_t mem_size);
     virtual const char *name() override { return "ARC"; }
@@ -111,7 +115,8 @@ private:
     size_t C;
 };
 
-class LFU : public PagePolicy {
+class LFU : public PagePolicy
+{
 public:
     LFU(size_t mem_size);
     virtual const char *name() override { return "LFU"; }
@@ -122,6 +127,21 @@ private:
     std::map<long, long> vpns_and_their_counts_;
     std::map<long, std::set<long>> counts_;
 
+    size_t cache_max_size_;
+    size_t cache_size_;
+    int return_type_;
+    std::vector<std::pair<long, size_t>> cache_;
+    std::map<long, size_t> indices_;
+
+    void swap(std::pair<long, size_t> &a, std::pair<long, size_t> &b);
+    size_t get_parent_index(size_t i);
+    size_t get_left_child_index(size_t i);
+    size_t get_right_child_index(size_t i);
+    void increment(std::vector<std::pair<long, size_t>> &v, std::map<long, size_t> &m, size_t i);
+    void heapify(std::vector<std::pair<long, size_t>> &v, std::map<long, size_t> &m, size_t i);
+    void insert(std::vector<std::pair<long, size_t>> &v,
+                std::map<long, size_t> &m, long value);
+    void refer(std::vector<std::pair<long, size_t>> &cache, std::map<long, size_t> &indices, long value);
 };
 
 class CLOCKPRO : public PagePolicy
@@ -134,18 +154,18 @@ public:
 private:
     virtual int add_memtrace_(const Record &record) override;
 
-     char type_cold = 0;
-     char type_hot = 1;
-     char type_test = 2;
-     char type_none = 4;
+    char type_cold = 0;
+    char type_hot = 1;
+    char type_test = 2;
+    char type_none = 4;
 
-     char reference_bit_false = 0;
-     char reference_bit_true = 1;
-     char page_discarded = 2;
+    char reference_bit_false = 0;
+    char reference_bit_true = 1;
+    char page_discarded = 2;
 
-     int miss = 0;
-     int hit = 1;
-     int miss_with_eviction = 2;
+    int miss = 0;
+    int hit = 1;
+    int miss_with_eviction = 2;
 
     // sizes
     size_t mem_hot_;  // m_h == number of hot pages
@@ -175,14 +195,12 @@ private:
     size_t hot_size_;
     size_t cold_size_;
 
-
     // rest_values
 
     void hot_action();
     void cold_action();
     void test_action();
     void evict_pages_();
-
 
     void delete_meta_data_(long vpn, char page_type);
     void add_meta_data_(long vpn, char page_type);
