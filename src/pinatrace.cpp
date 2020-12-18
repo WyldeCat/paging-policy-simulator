@@ -10,14 +10,14 @@
 #include "page_policy.hpp"
 #include "simulate.hpp"
 
-struct timeval start;
 PIN_MUTEX sim_lock;
 PIN_THREAD_UID uid;
 simulate_args args;
 volatile extern bool is_initialized;
 size_t curr = 0;
 
-long get_timestamp() {
+static struct timeval start;
+static long get_timestamp() {
     struct timeval now;
     gettimeofday(&now, NULL);
 
@@ -124,10 +124,12 @@ int main(int argc, char *argv[])
     args.policy = argv[6];
     args.num_buffer = argv[7];
     args.size_buffer = argv[8];
-    for (int i = 5; i < argc - 3; i++) {
-        argv[i] = argv[i + 4];
+    args.csv_out = argv[9];
+    args.num_interval = argv[10];
+    for (int i = 5; i < argc - 5; i++) {
+        argv[i] = argv[i + 6];
     }
-    argc -= 4;
+    argc -= 6;
 
     if (PIN_Init(argc, argv)) return Usage();
 

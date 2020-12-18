@@ -17,6 +17,8 @@ struct simulate_args {
     char *policy;
     char *num_buffer;
     char *size_buffer;
+    char *csv_out;
+    char *num_interval;
 };
 
 void simulate_loop(void *arg);
