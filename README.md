@@ -7,6 +7,7 @@
 ## Requirements and Installation
 * [Pin tool](https://software.intel.com/content/www/us/en/develop/articles/pin-a-dynamic-binary-instrumentation-tool.html) version >= 3.16
 * Python version >= 3.7.4
+* Matplotlib version >= 3.1.1
 * To install and build simulator
 ``` bash
 $ git clone https://github.com/WyldeCat/paging-policy-simulator
