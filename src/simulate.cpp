@@ -22,7 +22,14 @@ volatile bool is_initialized = false;
 size_t num_buffer;
 size_t size_buffer;
 
-long get_timestamp();
+static struct timeval start;
+static long get_timestamp() {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
+    return (now.tv_sec - start.tv_sec) * 1000000L +
+        (now.tv_usec - start.tv_usec);
+}
 
 void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     const std::vector<Record> &results = policy->results();
@@ -63,6 +70,8 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
 }
 
 void simulate_loop(void *arg) {
+    gettimeofday(&start, NULL);
+
     simulate_args *sim_args;
     sim_args = (simulate_args *)arg;
 
@@ -102,7 +111,7 @@ void simulate_loop(void *arg) {
         while (!PIN_MutexTryLock(&lock));
         if (buf_full.empty()) {
             PIN_MutexUnlock(&lock);
-            sleep(1);
+            sleep(0);
             continue;
         } else {
             target = buf_full.front();
@@ -139,18 +148,20 @@ void simulate_loop(void *arg) {
         policy->add_memtrace(record_queue[curr_idx][i]);
     }
 
-
-    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n\n");
-    fprintf(stderr, "[Simulator][INFO]      Elapsed(ms) : %f\n", end_ts / 1000.0);
-    fprintf(stderr, "[Simulator][INFO] Total mem access : %ld\n", policy->total_access());
-    fprintf(stderr, "[Simulator][INFO]              hit : %ld\n", policy->total_hit());
-    fprintf(stderr, "[Simulator][INFO]             miss : %ld\n", policy->total_miss());
-    fprintf(stderr, "[Simulator][INFO]         eviction : %ld\n", policy->total_eviction());
-    fprintf(stderr, "[Simulator][INFO]        Hit ratio : %f\n\n",
+    long total = get_timestamp();
+    fprintf(stderr, "[Simulator][INFO]  Simulation Finished!\n\n");
+    fprintf(stderr, "[Simulator][INFO] Physical Mem(KiB) : %zd\n", mem);
+    fprintf(stderr, "[Simulator][INFO]       Elapsed(ms) : %f\n", end_ts / 1000.0);
+    fprintf(stderr, "[Simulator][INFO] Total elapsed(ms) : %f\n", total / 1000.0);
+    fprintf(stderr, "[Simulator][INFO]  Total mem access : %ld\n", policy->total_access());
+    fprintf(stderr, "[Simulator][INFO]               hit : %ld\n", policy->total_hit());
+    fprintf(stderr, "[Simulator][INFO]              miss : %ld\n", policy->total_miss());
+    fprintf(stderr, "[Simulator][INFO]          eviction : %ld\n", policy->total_eviction());
+    fprintf(stderr, "[Simulator][INFO]         Hit ratio : %f\n\n",
         1.0 * policy->total_hit() / policy->total_access());
 
     fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
-    write_results_csv(100, end_ts, "out.csv");
+    write_results_csv(std::atoi(sim_args->num_interval), end_ts, sim_args->csv_out);
     fprintf(stderr, "[Simulator][INFO] Finish!\n");
 }
 
@@ -179,7 +190,7 @@ void add_memtrace(const Record &r) {
                 break;
             }
             PIN_MutexUnlock(&lock);
-            sleep(1);
+            sleep(0);
         }
 
         curr_idx = next;
