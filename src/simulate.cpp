@@ -31,7 +31,8 @@ static long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
-void write_results_csv(long num_interval, long end_ts, const char *path_name) {
+void write_results_csv(long num_interval, long end_ts, const char *path_name)
+{
     const std::vector<Record> &results = policy->results();
     const std::vector<int> &evictions = policy->evictions();
 
@@ -40,7 +41,8 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     std::vector<size_t> num_miss(num_interval, 0);
     std::vector<size_t> num_eviction(num_interval, 0);
 
-    for (size_t i = 0; i < results.size(); i++) {
+    for (size_t i = 0; i < results.size(); i++)
+    {
         const Record &result = results[i];
         const int &eviction = evictions[i];
 
@@ -52,18 +54,21 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     }
 
     FILE *csv = fopen(path_name, "w");
-    if (csv == nullptr) {
+    if (csv == nullptr)
+    {
         perror("fopen");
         assert(false);
     }
 
-    for (long i = 0; i < num_interval; i++) {
+    for (long i = 0; i < num_interval; i++)
+    {
         fprintf(csv, "%ld, %ld, %ld, %ld\n", (i + 1) * interval,
-            num_access[i], num_miss[i], num_eviction[i]);
+                num_access[i], num_miss[i], num_eviction[i]);
     }
 
     int ret = fclose(csv);
-    if (ret != 0) {
+    if (ret != 0)
+    {
         perror("fclose");
         assert(false);
     }
@@ -91,17 +96,30 @@ void simulate_loop(void *arg) {
     std::string policy_name(sim_args->policy);
     long end_ts = 0;
 
-    if (policy_name == "LRU") {
+    if (policy_name == "LRU")
+    {
         policy = new LRU(mem);
-    } else if( policy_name == "ARC" ) {
+    }
+    else if (policy_name == "ARC")
+    {
         policy = new ARC(mem);
-    } else if( policy_name == "FIFO" ) {
+    }
+    else if (policy_name == "FIFO")
+    {
         policy = new FIFO(mem);
-    } else if( policy_name == "LFU" ) {
-    } else if( policy_name == "CLOCK_PRO" ) {
-    } else {
+    }
+    else if (policy_name == "LFU")
+    {
+        policy = new LFU(mem);
+    }
+    else if (policy_name == "CLOCK_PRO")
+    {
+        policy = new CLOCK_PRO(mem);
+    }
+    else
+    {
         fprintf(stderr, "[ERROR] Unknown Policy %s %zd\n",
-            policy_name.c_str(), mem);
+                policy_name.c_str(), mem);
     }
 
     // trace consume loop
@@ -124,10 +142,12 @@ void simulate_loop(void *arg) {
             if (r.is_write == 2) {
                 end_ts = r.time_stamp;
             }
+            printf("will try to add_memtrace to the policy\n");
             policy->add_memtrace(r);
         }
 
-        while (!PIN_MutexTryLock(&lock));
+        while (!PIN_MutexTryLock(&lock))
+            ;
         buf_free.insert(target);
         PIN_MutexUnlock(&lock);
     }
@@ -170,9 +190,12 @@ void simulate_loop(void *arg) {
     fprintf(stderr, "[Simulator][INFO] Finish!\n");
 }
 
-void add_memtrace(const Record &r) {
-    if (!is_initialized) {
-        while (!is_initialized);
+void add_memtrace(const Record &r)
+{
+    if (!is_initialized)
+    {
+        while (!is_initialized)
+            ;
     }
 
     record_queue[curr_idx][curr_cnt++] = r;
@@ -185,10 +208,13 @@ void add_memtrace(const Record &r) {
         buf_full.push(curr_idx);
         PIN_MutexUnlock(&lock);
 
-        while (true) {
-            while (!PIN_MutexTryLock(&lock));
+        while (true)
+        {
+            while (!PIN_MutexTryLock(&lock))
+                ;
             is_free_empty = buf_free.empty();
-            if (!is_free_empty) {
+            if (!is_free_empty)
+            {
                 next = *buf_free.begin();
                 buf_free.erase(next);
                 PIN_MutexUnlock(&lock);
@@ -202,7 +228,8 @@ void add_memtrace(const Record &r) {
         curr_cnt = 0;
     }
 
-    if (r.is_write == 2) {
+    if (r.is_write == 2)
+    {
         terminate = true;
     }
 }
