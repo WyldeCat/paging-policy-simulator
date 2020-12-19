@@ -2,7 +2,8 @@
 
 #include <stdio.h>
 
-#define debug 1
+#define _MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define _MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) { 
 	C = max_num_page_;
@@ -15,25 +16,16 @@ int ARC::add_memtrace_(const Record &record) {
     int index;
     // case 1) page is in the cache(T1) : hit
     if( (index = T1.find(vpn)) != -1 ) {
-	#ifdef debug
-	printf("case1, ");
-	#endif	
         T1.remove(index, vpn);
 	T2.push(vpn);
         return 1;
     // case 2) page is in the cache(T2) : hit
     } else if( (index = T2.find(vpn)) != -1 ) {
-	#ifdef debug
-	printf("case2, ");
-	#endif	
         T2.remove(index, vpn);
 	T2.push(vpn);
         return 1;
     // case 3) page is in ghost cache(B1) : miss
     } else if( (index = B1.find(vpn)) != -1 ) {
-	#ifdef debug
-	printf("case3, ");
-	#endif	
 	increase_P();
 	replace(vpn, false);
 	// move page : B1 --> T2
@@ -42,9 +34,6 @@ int ARC::add_memtrace_(const Record &record) {
         return 2;
     // case 4) page is in ghost cache(B2) : miss
     } else if( (index = B2.find(vpn)) != -1 ) {
-	#ifdef debug
-	printf("case4, ");
-	#endif	
 	decrease_P();
 	replace(vpn, true);
 	// move page : B2 --> T2
@@ -53,10 +42,6 @@ int ARC::add_memtrace_(const Record &record) {
         return 2;
     // case 5) page is not in both : miss
     } else {
-	#ifdef debug
-	printf("case5, ");
-	#endif	
-	int ret = 0;
 	size_t T1_size = T1.get_size();
 	size_t T2_size = T2.get_size();
 	size_t B1_size = B1.get_size();
@@ -98,37 +83,37 @@ void ARC::increase_P() {
     size_t B1_size = B1.get_size();
     size_t B2_size = B2.get_size();
 
+    size_t theta;
     if( B1_size >= B2_size ) {
-        P++;
+        theta = 1;
     } else {
-    	P += B2_size/B1_size;
+    	theta = B2_size/B1_size;
     }
+
+    P = _MIN(P+theta, C);
 }
 
 void ARC::decrease_P() {
     size_t B1_size = B1.get_size();
     size_t B2_size = B2.get_size();
 
+    size_t theta;
     if( B2_size >= B1_size ) {
-        P--;
+        theta = 1;
     } else {
-    	P -= B1_size/B2_size;
+    	theta= B1_size/B2_size;
     }
+    P = _MAX(P-theta, 0);
 }
+
 void ARC::replace(long vpn, bool B2_flag) {
     size_t T1_size = T1.get_size();
     long victim_vpn;
     if( T1_size != 0 && (T1_size > P || ( B2_flag && T1_size == P)) ) {
-	#ifdef debug
-	printf("replace if, ");
-	#endif 
         // move page : T1 --> B1
 	victim_vpn = T1.pop(); // delete the LRU page in T1
         B1.push(victim_vpn); // push page to B1
     } else {
-	#ifdef debug
-	printf("replace else, ");
-	#endif 
     	// move page : T2 --> B2
 	victim_vpn = T2.pop(); // delte the LRU page in T2
 	B2.push(victim_vpn); // push page to B2
