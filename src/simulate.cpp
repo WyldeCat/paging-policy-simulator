@@ -74,14 +74,9 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name)
     }
 }
 
-<<<<<<< HEAD
 void simulate_loop(void *arg) {
     gettimeofday(&start, NULL);
 
-=======
-void simulate_loop(void *arg)
-{
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
     simulate_args *sim_args;
     sim_args = (simulate_args *)arg;
 
@@ -91,12 +86,7 @@ void simulate_loop(void *arg)
     size_buffer = std::atoi(sim_args->size_buffer) * 1024L * 1024L;
     record_queue.resize(num_buffer, std::vector<Record>(size_buffer));
     curr_idx = curr_cnt = 0;
-<<<<<<< HEAD
     for (size_t i = 1; i < num_buffer; i++) buf_free.insert(i);
-=======
-    for (size_t i = 0; i < num_buffer; i++)
-        buf_free.insert(i);
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
     terminate = false;
 
     is_initialized = true;
@@ -133,28 +123,14 @@ void simulate_loop(void *arg)
     }
 
     // trace consume loop
-<<<<<<< HEAD
     while (!terminate) {
         int target;
 
         while (!PIN_MutexTryLock(&lock));
         if (buf_full.empty()) {
-=======
-    while (!terminate)
-    {
-        bool is_empty;
-        int target;
-
-        while (!PIN_MutexTryLock(&lock))
-            ;
-        is_empty = buf_full.empty();
-        if (is_empty)
-        {
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
             PIN_MutexUnlock(&lock);
             sleep(0);
             continue;
-<<<<<<< HEAD
         } else {
             target = buf_full.front();
             buf_full.pop();
@@ -164,20 +140,6 @@ void simulate_loop(void *arg)
         for (size_t i = 0; i < record_queue[target].size(); i++) {
             auto &r = record_queue[target][i];
             if (r.is_write == 2) {
-=======
-        }
-        else
-        {
-            target = *buf_full.begin();
-            buf_full.erase(target);
-        }
-        PIN_MutexUnlock(&lock);
-
-        for (auto &r : record_queue[target])
-        {
-            if (r.is_write == 2)
-            {
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
                 end_ts = r.time_stamp;
             }
             printf("will try to add_memtrace to the policy\n");
@@ -190,7 +152,6 @@ void simulate_loop(void *arg)
         PIN_MutexUnlock(&lock);
     }
 
-<<<<<<< HEAD
     while (!buf_full.empty()) {
         int f = buf_full.front();
         buf_full.pop();
@@ -202,18 +163,11 @@ void simulate_loop(void *arg)
 
     for (size_t i = 0; i < curr_cnt; i++) {
         if (record_queue[curr_idx][i].is_write == 2) {
-=======
-    for (size_t i = 0; i < curr_cnt; i++)
-    {
-        if (record_queue[curr_idx][i].is_write == 2)
-        {
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
             end_ts = record_queue[curr_idx][i].time_stamp;
         }
         policy->add_memtrace(record_queue[curr_idx][i]);
     }
 
-<<<<<<< HEAD
     long total = get_timestamp();
     fprintf(stderr, "[Simulator][INFO]  Simulation Finished!\n\n");
     fprintf(stderr, "[Simulator][INFO] Physical Mem(KiB) : %zd\n", mem);
@@ -230,26 +184,6 @@ void simulate_loop(void *arg)
         fprintf(stderr, "[Simulator][INFO]        Hit ratio' : %f\n\n",
             1.0 - 1.0 * policy->total_eviction() / policy->after_eviction());
     }
-=======
-    for (int f : buf_full)
-    {
-        for (auto &r : record_queue[f])
-        {
-            if (r.is_write == 2)
-                end_ts = r.time_stamp;
-            policy->add_memtrace(r);
-        }
-    }
-
-    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n\n");
-    fprintf(stderr, "[Simulator][INFO]      Elapsed(ms) : %f\n", (end_ts - offset) / 1000.0);
-    fprintf(stderr, "[Simulator][INFO] Total mem access : %ld\n", policy->total_access());
-    fprintf(stderr, "[Simulator][INFO]              hit : %ld\n", policy->total_hit());
-    fprintf(stderr, "[Simulator][INFO]             miss : %ld\n", policy->total_miss());
-    fprintf(stderr, "[Simulator][INFO]         eviction : %ld\n", policy->total_eviction());
-    fprintf(stderr, "[Simulator][INFO]        Hit ratio : %f\n\n",
-            1.0 * policy->total_hit() / policy->total_access());
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
 
     fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
     write_results_csv(std::atoi(sim_args->num_interval), end_ts, sim_args->csv_out);
@@ -265,7 +199,6 @@ void add_memtrace(const Record &r)
     }
 
     record_queue[curr_idx][curr_cnt++] = r;
-<<<<<<< HEAD
 
     if (curr_cnt == size_buffer) {
         bool is_free_empty;
@@ -273,17 +206,6 @@ void add_memtrace(const Record &r)
 
         while (!PIN_MutexTryLock(&lock));
         buf_full.push(curr_idx);
-=======
-    if (curr_cnt == size_buffer)
-    {
-        bool is_free_empty;
-        int next = 0;
-
-        while (!PIN_MutexTryLock(&lock))
-            ;
-        fprintf(stderr, "- insert full!! %zd\n", curr_idx);
-        buf_full.insert(curr_idx);
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
         PIN_MutexUnlock(&lock);
 
         while (true)
