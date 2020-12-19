@@ -42,6 +42,7 @@ int ARC::add_memtrace_(const Record &record) {
         return 2;
     // case 5) page is not in both : miss
     } else {
+	int ret=0;
 	size_t T1_size = T1.get_size();
 	size_t T2_size = T2.get_size();
 	size_t B1_size = B1.get_size();
