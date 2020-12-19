@@ -5,6 +5,8 @@
 #include <utility>
 #include <list>
 #include <set>
+#include <map>
+#include <unordered_map>
 
 #include "simulate.hpp"
 
@@ -124,24 +126,19 @@ public:
 private:
     virtual int add_memtrace_(const Record &record) override;
 
-    std::map<long, long> vpns_and_their_counts_;
-    std::map<long, std::set<long>> counts_;
+    std::multimap<size_t, long> counts_multimap;
+    std::unordered_map<long, std::multimap<size_t, long>::iterator> page_number_unorderedmap;
 
-    size_t cache_max_size_;
-    size_t cache_size_;
-    int return_type_;
-    std::vector<std::pair<long, size_t>> cache_;
-    std::map<long, size_t> indices_;
+    size_t count_;
 
-    void swap(std::pair<long, size_t> &a, std::pair<long, size_t> &b);
-    size_t get_parent_index(size_t i);
-    size_t get_left_child_index(size_t i);
-    size_t get_right_child_index(size_t i);
-    void increment(std::vector<std::pair<long, size_t>> &v, std::map<long, size_t> &m, size_t i);
-    void heapify(std::vector<std::pair<long, size_t>> &v, std::map<long, size_t> &m, size_t i);
-    void insert(std::vector<std::pair<long, size_t>> &v,
-                std::map<long, size_t> &m, long value);
-    void refer(std::vector<std::pair<long, size_t>> &cache, std::map<long, size_t> &indices, long value);
+    const int miss = 0;
+    const int hit = 1;
+    const int miss_with_eviction = 2;
+
+    void insert_page(const long &page_number);
+    void remove_page(const long &page_number);
+    void access_page(const long &page_number);
+    long get_evict_target();
 };
 
 class CLOCKPRO : public PagePolicy
@@ -153,57 +150,4 @@ public:
 
 private:
     virtual int add_memtrace_(const Record &record) override;
-
-    char type_cold = 0;
-    char type_hot = 1;
-    char type_test = 2;
-    char type_none = 4;
-
-    char reference_bit_false = 0;
-    char reference_bit_true = 1;
-    char page_discarded = 2;
-
-    int miss = 0;
-    int hit = 1;
-    int miss_with_eviction = 2;
-
-    // sizes
-    size_t mem_hot_;  // m_h == number of hot pages
-    size_t mem_cold_; // m_c == number of cold pages resident
-    // m = m_h+m_c
-
-    size_t max_size_; // m
-    size_t max_cold_; // m
-
-    float hot_size_ratio_;
-
-    std::vector<std::pair<long, char>> meta_data_;
-
-    // char: 0 for bit false, 1 for bit true, 2 for discard
-    std::map<long, char> data_cache_;
-
-    // hand positions
-    size_t hand_hot_;
-    size_t hand_cold_;
-    size_t hand_test_;
-
-    //internal counters;
-    size_t hot_count_;
-    size_t cold_count_;
-    size_t test_count_;
-
-    size_t hot_size_;
-    size_t cold_size_;
-
-    // rest_values
-
-    void hot_action();
-    void cold_action();
-    void test_action();
-    void evict_pages_();
-
-    void delete_meta_data_(long vpn, char page_type);
-    void add_meta_data_(long vpn, char page_type);
-
-    bool is_evicted;
 };
