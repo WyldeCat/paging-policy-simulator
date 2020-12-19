@@ -3,12 +3,18 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <list>
+#include <set>
+#include <map>
+#include <unordered_map>
 
 #include "simulate.hpp"
 
-class PagePolicy {
+class PagePolicy
+{
 public:
-    PagePolicy(size_t mem_size) : mem_size_(mem_size) {
+    PagePolicy(size_t mem_size) : mem_size_(mem_size)
+    {
         max_num_page_ = mem_size_ / page_size;
         total_access_ = 0;
         total_hit_ = 0;
@@ -16,7 +22,8 @@ public:
         is_eviction_happend_ = false;
     }
 
-    void add_memtrace(Record &record) {
+    void add_memtrace(Record &record)
+    {
         total_access_++;
 
         int ret = add_memtrace_(record);
@@ -61,24 +68,29 @@ protected:
     virtual int add_memtrace_(const Record &record) = 0;
 };
 
-
-class List {
+class List
+{
 public:
-	List();
-	size_t index;
-	int find(long vpn);
-	void remove(long vpn);
-	void remove(size_t index, long vpn);
-	long pop();
-	void push(long vpn);
-	size_t get_size();
+    List();
+    size_t index;
+    int find(long vpn);
+    void remove(long vpn);
+    void remove(size_t index, long vpn);
+    long pop();
+    void push(long vpn);
+    size_t get_size();
 
 private:
-	std::map<long, size_t> vpn_to_index;
-	std::map<size_t, long> index_to_vpn;
+    std::map<long, size_t> vpn_to_index;
+    std::map<size_t, long> index_to_vpn;
 };
 
+<<<<<<< HEAD
 class LRU : public PagePolicy {
+=======
+class LRU : public PagePolicy
+{
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
 public:
     LRU(size_t mem_size);
     virtual const char *name() override { return "LRU"; }
@@ -90,7 +102,8 @@ private:
     size_t count_;
 };
 
-class FIFO : public PagePolicy {
+class FIFO : public PagePolicy
+{
 public:
     FIFO(size_t mem_size);
     virtual const char *name() override { return "FIFO"; }
@@ -102,7 +115,8 @@ private:
     size_t count_;
 };
 
-class ARC: public PagePolicy {
+class ARC : public PagePolicy
+{
 public:
     ARC(size_t mem_size);
     virtual const char *name() override { return "ARC"; }
@@ -119,5 +133,67 @@ private:
     size_t C;
 };
 
+class LFU : public PagePolicy
+{
+public:
+    LFU(size_t mem_size);
+    virtual const char *name() override { return "LFU"; }
 
+private:
+    virtual int add_memtrace_(const Record &record) override;
 
+    std::multimap<size_t, long> counts_multimap;
+    std::unordered_map<long, std::multimap<size_t, long>::iterator> page_number_unorderedmap;
+
+    size_t count_;
+
+    const int miss = 0;
+    const int hit = 1;
+    const int miss_with_eviction = 2;
+
+    void insert_page(const long &page_number);
+    void remove_page(const long &page_number);
+    void access_page(const long &page_number);
+    long get_evict_target();
+};
+
+class CLOCK_PRO : public PagePolicy
+{
+
+public:
+    CLOCK_PRO(size_t mem_size);
+    virtual const char *name() override { return "CLOCKPRO"; }
+
+private:
+    virtual int add_memtrace_(const Record &record) override;
+
+    std::map<long, std::pair<bool, bool>> page_bit_and_is_test_map;
+    std::vector<std::pair<long, char>> page_type_vector;
+
+    size_t hand_cold;
+    size_t hand_hot;
+    size_t hand_test;
+
+    size_t count_cold;
+    size_t count_hot;
+    size_t count_test;
+
+    size_t mem_cold_size;
+
+    size_t count_;
+
+    int ret;
+    const int miss = 0;
+    const int hit = 1;
+    const int miss_with_eviction = 2;
+
+    void insert_page(const long &page_number);
+    void evict_pages();
+
+    void add_meta(std::pair<long, char> meta_data);
+    void delete_meta(std::pair<long, char> meta_data);
+
+    void cold_action();
+    void hot_action();
+    void test_action();
+};

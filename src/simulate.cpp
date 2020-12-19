@@ -31,7 +31,8 @@ static long get_timestamp() {
         (now.tv_usec - start.tv_usec);
 }
 
-void write_results_csv(long num_interval, long end_ts, const char *path_name) {
+void write_results_csv(long num_interval, long end_ts, const char *path_name)
+{
     const std::vector<Record> &results = policy->results();
     const std::vector<int> &evictions = policy->evictions();
 
@@ -40,7 +41,8 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     std::vector<size_t> num_miss(num_interval, 0);
     std::vector<size_t> num_eviction(num_interval, 0);
 
-    for (size_t i = 0; i < results.size(); i++) {
+    for (size_t i = 0; i < results.size(); i++)
+    {
         const Record &result = results[i];
         const int &eviction = evictions[i];
 
@@ -52,26 +54,34 @@ void write_results_csv(long num_interval, long end_ts, const char *path_name) {
     }
 
     FILE *csv = fopen(path_name, "w");
-    if (csv == nullptr) {
+    if (csv == nullptr)
+    {
         perror("fopen");
         assert(false);
     }
 
-    for (long i = 0; i < num_interval; i++) {
+    for (long i = 0; i < num_interval; i++)
+    {
         fprintf(csv, "%ld, %ld, %ld, %ld\n", (i + 1) * interval,
-            num_access[i], num_miss[i], num_eviction[i]);
+                num_access[i], num_miss[i], num_eviction[i]);
     }
 
     int ret = fclose(csv);
-    if (ret != 0) {
+    if (ret != 0)
+    {
         perror("fclose");
         assert(false);
     }
 }
 
+<<<<<<< HEAD
 void simulate_loop(void *arg) {
     gettimeofday(&start, NULL);
 
+=======
+void simulate_loop(void *arg)
+{
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
     simulate_args *sim_args;
     sim_args = (simulate_args *)arg;
 
@@ -81,7 +91,12 @@ void simulate_loop(void *arg) {
     size_buffer = std::atoi(sim_args->size_buffer) * 1024L * 1024L;
     record_queue.resize(num_buffer, std::vector<Record>(size_buffer));
     curr_idx = curr_cnt = 0;
+<<<<<<< HEAD
     for (size_t i = 1; i < num_buffer; i++) buf_free.insert(i);
+=======
+    for (size_t i = 0; i < num_buffer; i++)
+        buf_free.insert(i);
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
     terminate = false;
 
     is_initialized = true;
@@ -91,28 +106,55 @@ void simulate_loop(void *arg) {
     std::string policy_name(sim_args->policy);
     long end_ts = 0;
 
-    if (policy_name == "LRU") {
+    if (policy_name == "LRU")
+    {
         policy = new LRU(mem);
-    } else if( policy_name == "ARC" ) {
+    }
+    else if (policy_name == "ARC")
+    {
         policy = new ARC(mem);
-    } else if( policy_name == "FIFO" ) {
+    }
+    else if (policy_name == "FIFO")
+    {
         policy = new FIFO(mem);
-    } else if( policy_name == "LFU" ) {
-    } else if( policy_name == "CLOCK_PRO" ) {
-    } else {
+    }
+    else if (policy_name == "LFU")
+    {
+        policy = new LFU(mem);
+    }
+    else if (policy_name == "CLOCK_PRO")
+    {
+        policy = new CLOCK_PRO(mem);
+    }
+    else
+    {
         fprintf(stderr, "[ERROR] Unknown Policy %s %zd\n",
-            policy_name.c_str(), mem);
+                policy_name.c_str(), mem);
     }
 
     // trace consume loop
+<<<<<<< HEAD
     while (!terminate) {
         int target;
 
         while (!PIN_MutexTryLock(&lock));
         if (buf_full.empty()) {
+=======
+    while (!terminate)
+    {
+        bool is_empty;
+        int target;
+
+        while (!PIN_MutexTryLock(&lock))
+            ;
+        is_empty = buf_full.empty();
+        if (is_empty)
+        {
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
             PIN_MutexUnlock(&lock);
             sleep(0);
             continue;
+<<<<<<< HEAD
         } else {
             target = buf_full.front();
             buf_full.pop();
@@ -122,16 +164,33 @@ void simulate_loop(void *arg) {
         for (size_t i = 0; i < record_queue[target].size(); i++) {
             auto &r = record_queue[target][i];
             if (r.is_write == 2) {
+=======
+        }
+        else
+        {
+            target = *buf_full.begin();
+            buf_full.erase(target);
+        }
+        PIN_MutexUnlock(&lock);
+
+        for (auto &r : record_queue[target])
+        {
+            if (r.is_write == 2)
+            {
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
                 end_ts = r.time_stamp;
             }
+            printf("will try to add_memtrace to the policy\n");
             policy->add_memtrace(r);
         }
 
-        while (!PIN_MutexTryLock(&lock));
+        while (!PIN_MutexTryLock(&lock))
+            ;
         buf_free.insert(target);
         PIN_MutexUnlock(&lock);
     }
 
+<<<<<<< HEAD
     while (!buf_full.empty()) {
         int f = buf_full.front();
         buf_full.pop();
@@ -143,11 +202,18 @@ void simulate_loop(void *arg) {
 
     for (size_t i = 0; i < curr_cnt; i++) {
         if (record_queue[curr_idx][i].is_write == 2) {
+=======
+    for (size_t i = 0; i < curr_cnt; i++)
+    {
+        if (record_queue[curr_idx][i].is_write == 2)
+        {
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
             end_ts = record_queue[curr_idx][i].time_stamp;
         }
         policy->add_memtrace(record_queue[curr_idx][i]);
     }
 
+<<<<<<< HEAD
     long total = get_timestamp();
     fprintf(stderr, "[Simulator][INFO]  Simulation Finished!\n\n");
     fprintf(stderr, "[Simulator][INFO] Physical Mem(KiB) : %zd\n", mem);
@@ -164,18 +230,42 @@ void simulate_loop(void *arg) {
         fprintf(stderr, "[Simulator][INFO]        Hit ratio' : %f\n\n",
             1.0 - 1.0 * policy->total_eviction() / policy->after_eviction());
     }
+=======
+    for (int f : buf_full)
+    {
+        for (auto &r : record_queue[f])
+        {
+            if (r.is_write == 2)
+                end_ts = r.time_stamp;
+            policy->add_memtrace(r);
+        }
+    }
+
+    fprintf(stderr, "[Simulator][INFO] Simulation Finished!\n\n");
+    fprintf(stderr, "[Simulator][INFO]      Elapsed(ms) : %f\n", (end_ts - offset) / 1000.0);
+    fprintf(stderr, "[Simulator][INFO] Total mem access : %ld\n", policy->total_access());
+    fprintf(stderr, "[Simulator][INFO]              hit : %ld\n", policy->total_hit());
+    fprintf(stderr, "[Simulator][INFO]             miss : %ld\n", policy->total_miss());
+    fprintf(stderr, "[Simulator][INFO]         eviction : %ld\n", policy->total_eviction());
+    fprintf(stderr, "[Simulator][INFO]        Hit ratio : %f\n\n",
+            1.0 * policy->total_hit() / policy->total_access());
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
 
     fprintf(stderr, "[Simulator][INFO] Writing csv...\n");
     write_results_csv(std::atoi(sim_args->num_interval), end_ts, sim_args->csv_out);
     fprintf(stderr, "[Simulator][INFO] Finish!\n");
 }
 
-void add_memtrace(const Record &r) {
-    if (!is_initialized) {
-        while (!is_initialized);
+void add_memtrace(const Record &r)
+{
+    if (!is_initialized)
+    {
+        while (!is_initialized)
+            ;
     }
 
     record_queue[curr_idx][curr_cnt++] = r;
+<<<<<<< HEAD
 
     if (curr_cnt == size_buffer) {
         bool is_free_empty;
@@ -183,12 +273,26 @@ void add_memtrace(const Record &r) {
 
         while (!PIN_MutexTryLock(&lock));
         buf_full.push(curr_idx);
+=======
+    if (curr_cnt == size_buffer)
+    {
+        bool is_free_empty;
+        int next = 0;
+
+        while (!PIN_MutexTryLock(&lock))
+            ;
+        fprintf(stderr, "- insert full!! %zd\n", curr_idx);
+        buf_full.insert(curr_idx);
+>>>>>>> df182183e9de2fb807453ae84a8044556a17465d
         PIN_MutexUnlock(&lock);
 
-        while (true) {
-            while (!PIN_MutexTryLock(&lock));
+        while (true)
+        {
+            while (!PIN_MutexTryLock(&lock))
+                ;
             is_free_empty = buf_free.empty();
-            if (!is_free_empty) {
+            if (!is_free_empty)
+            {
                 next = *buf_free.begin();
                 buf_free.erase(next);
                 PIN_MutexUnlock(&lock);
@@ -202,7 +306,8 @@ void add_memtrace(const Record &r) {
         curr_cnt = 0;
     }
 
-    if (r.is_write == 2) {
+    if (r.is_write == 2)
+    {
         terminate = true;
     }
 }
