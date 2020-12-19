@@ -85,12 +85,8 @@ private:
     std::map<size_t, long> index_to_vpn;
 };
 
-<<<<<<< HEAD
-class LRU : public PagePolicy {
-=======
 class LRU : public PagePolicy
 {
->>>>>>> df182183e9de2fb807453ae84a8044556a17465d
 public:
     LRU(size_t mem_size);
     virtual const char *name() override { return "LRU"; }
