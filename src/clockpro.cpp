@@ -1,227 +1,230 @@
 #include "page_policy.hpp"
 
 #include <stdio.h>
+#include <map>
+#include <unordered_map>
+
+#define PageNumber long
+#define Count size_t
+
+#define type_cold 0
+#define type_hot 1
+#define type_test 2
+
+#define in_test true
+#define not_in_test false
+
+#define ref_bit_on true
+#define ref_bit_off false
+
+// std::map<long, std::pair<bool, bool> page_bit_and_is_test_map;
+// std::vector<std::pair<long, char> page_type_vector;
 
 using namespace std;
 
-CLOCKPRO::CLOCKPRO(size_t mem_size) : PagePolicy(mem_size)
+CLOCK_PRO::CLOCK_PRO(size_t mem_size) : PagePolicy(mem_size), count_(0)
 {
-    hot_size_ratio_ = 0.5;
-    hot_size_ = mem_size_ * hot_size_ratio_;
-    cold_size_ = mem_size_ - hot_size_;
+    hand_cold = 0;
+    hand_hot = 0;
+    hand_test = 0;
 
-    hand_hot_ = 0;
-    hand_cold_ = 0;
-    hand_test_ = 0;
-
-    hot_count_ = 0;
-    cold_count_ = 0;
-    test_count_ = 0;
-
-    is_evicted = false;
+    count_cold = 0;
+    count_hot = 0;
+    count_test = 0;
+    ret = miss;
 }
 
-int CLOCKPRO::add_memtrace_(const Record &record)
+int CLOCK_PRO::add_memtrace_(const Record &record)
 {
-    long vpn = record.addr << 14;
+    ret = miss;
+    count_++;
+    PageNumber vpn = record.addr << 14;
 
-    // check if the page is in the list
-    if (data_cache_.find(vpn) != data_cache_.end())
+    auto page_iterator = page_bit_and_is_test_map.find(vpn);
+
+    // the page is in the map
+    if (page_iterator != page_bit_and_is_test_map.end())
     {
-        if (data_cache_[vpn] != page_discarded)
+        // case 0: the page is not in test
+        if (page_bit_and_is_test_map[vpn].second != in_test)
         {
-            if (cold_count_ < max_size_)
-                cold_count_++;
-
-            data_cache_[vpn] = reference_bit_false;
-
-            // test
-            delete_meta_data_(vpn, type_test);
-            test_count_--;
-
-            add_meta_data_(vpn, type_hot);
-            hot_count_++;
-
+            page_bit_and_is_test_map[vpn].first = ref_bit_on;
             return hit;
         }
+        // the page is not in the cache
+        // case 1: the page is in test
         else
         {
-            data_cache_[vpn] = reference_bit_true;
-            return hit;
+            if (mem_cold_size < mem_size_)
+                mem_cold_size++;
+            page_bit_and_is_test_map[vpn] = make_pair(ref_bit_on, not_in_test);
+            delete_meta(make_pair(vpn, type_test));
+            count_test--;
+            add_meta(make_pair(vpn, type_hot));
+            count_hot++;
+            return ret;
         }
     }
-
+    // the page is not in the map
     else
     {
-        data_cache_[vpn] = reference_bit_false;
-        add_meta_data_(vpn, type_cold);
-        cold_count_++;
-
-        if (is_evicted)
-            return miss_with_eviction;
-        else
-            return miss;
+        insert_page(vpn);
+        return ret;
     }
 }
 
-void CLOCKPRO::delete_meta_data_(long vpn, char page_type)
+void CLOCK_PRO::insert_page(const PageNumber &page_number)
 {
-    std::pair<long, char> meta_datum = make_pair(vpn, page_type);
-
-    //  std::vector<std::pair<long, char>> meta_data_;
-    //  FIXME: doesn't have find
-    vector<pair<long,char>>::iterator meta_data_finder = find(meta_data_.begin(), meta_data_.end(), meta_datum);
-
-    size_t meta_index = distance(meta_data_.begin(), meta_data_finder);
-    meta_data_.erase(meta_data_.begin() + meta_index);
-    size_t max_position = meta_data_.size() - 1;
-
-    // if the hot hand
-    if (hand_hot_ >= meta_index)
-    {
-        hand_hot_--;
-        if (hand_hot_ < 0)
-            hand_hot_ = max_position;
-    }
-
-    if (hand_cold_ >= meta_index)
-    {
-        hand_cold_--;
-        if (hand_cold_ < 0)
-            hand_cold_ = max_position;
-    }
-
-    if (hand_test_ >= meta_index)
-    {
-        hand_test_--;
-        if (hand_test_ < 0)
-            hand_test_ = max_position;
-    }
+    page_bit_and_is_test_map[page_number] = make_pair(ref_bit_off, not_in_test);
+    add_meta(make_pair(page_number, type_cold));
+    count_cold++;
 }
 
-void CLOCKPRO::add_meta_data_(long vpn, char page_type)
+void CLOCK_PRO::evict_pages()
 {
-    pair<long, char> meta_datum = make_pair(vpn, page_type);
-    evict_pages_();
-
-    meta_data_.insert(meta_data_.begin() + hand_hot_, meta_datum);
-    size_t max_position = meta_data_.size();
-
-    if (hand_cold_ > hand_hot_)
-    {
-        hand_cold_++;
-        if (hand_cold_ > max_position)
-            hand_cold_ = 0;
-    }
-
-    if (hand_test_ > hand_hot_)
-    {
-        hand_test_++;
-        if (hand_test_ > max_position)
-            hand_test_ = 0;
-    }
-
-    hand_hot_++;
-    if (hand_hot_ > max_position)
-        hand_hot_ = 0;
-}
-
-void CLOCKPRO::evict_pages_()
-{
-    while (max_size_ <= cold_count_ + hot_count_)
-    {
+    while (mem_size_ <= count_hot + count_cold)
         cold_action();
-        is_evicted = true;
+}
+
+void CLOCK_PRO::add_meta(pair<long, char> meta_data)
+{
+    evict_pages();
+    page_type_vector.insert(page_type_vector.begin() + hand_hot, meta_data);
+
+    size_t index = hand_hot;
+    size_t max_position = page_type_vector.size() - 1;
+
+    if (hand_hot >= index)
+    {
+        hand_hot++;
+        if (hand_hot >= max_position)
+            hand_hot = 0;
+    }
+
+    if (hand_cold >= index)
+    {
+        hand_cold++;
+        if (hand_cold >= max_position)
+            hand_cold = 0;
+    }
+
+    if (hand_test >= index)
+    {
+        hand_test++;
+        if (hand_test >= max_position)
+            hand_test = 0;
     }
 }
 
-void CLOCKPRO::cold_action()
+void CLOCK_PRO::delete_meta(pair<long, char> meta_data)
 {
-    std::pair<long, char> meta_datum = meta_data_[hand_cold_];
-    long current_page_num = meta_datum.first;
-    // if cold
-    if (meta_datum.second == type_cold)
+    auto page_iterator = find(page_type_vector.begin(), page_type_vector.end(), meta_data);
+    size_t index = page_iterator - page_type_vector.begin();
+    page_type_vector.erase(&meta_data);
+    size_t max_position = page_type_vector.size() - 1;
+
+    if (hand_hot >= index)
     {
-        if (data_cache_[current_page_num] == reference_bit_true)
+        hand_hot--;
+        if (hand_hot < 0)
+            hand_hot = max_position;
+    }
+
+    if (hand_cold >= index)
+    {
+        hand_cold--;
+        if (hand_cold < 0)
+            hand_cold = max_position;
+    }
+
+    if (hand_test >= index)
+    {
+        hand_test--;
+        if (hand_test < 0)
+            hand_test = max_position;
+    }
+}
+
+void CLOCK_PRO::cold_action()
+{
+    auto meta_data = page_type_vector[hand_cold];
+    auto ref_bit_and_test_bit = page_bit_and_is_test_map[meta_data.first];
+    if (meta_data.second == type_cold)
+    {
+        bool ref_bit = ref_bit_and_test_bit.first;
+        if (ref_bit)
         {
-            meta_datum.second = type_hot;
-            data_cache_[current_page_num] = reference_bit_false;
-
-            hot_count_++;
-            cold_count_--;
+            meta_data.second = type_hot;
+            ref_bit = false;
+            count_cold--;
+            count_hot++;
         }
-
-        // ref bit is 0
         else
         {
-            // change the type to test
-            meta_datum.second = type_test;
-            data_cache_[current_page_num] = page_discarded;
-            cold_count_--;
-            test_count_++;
+            //eviction happened
+            ret = miss_with_eviction;
+            meta_data.second = type_test;
+            ref_bit_and_test_bit.second = in_test;
+            count_cold--;
+            count_test++;
 
-            while (max_size_ < test_count_)
+            while (mem_size_ < count_test)
+            {
                 test_action();
+            }
         }
 
-        hand_cold_++;
-        if (hand_cold_ >= meta_data_.size())
-            hand_cold_ = 0;
-
-        while (max_size_ - max_cold_ < hot_count_)
+        hand_cold++;
+        if (hand_cold >= page_type_vector.size())
+            hand_cold = 0;
+        while (mem_size_ - mem_cold_size < count_hot)
+        {
             hot_action();
+        }
     }
 }
 
-void CLOCKPRO::hot_action()
+void CLOCK_PRO::hot_action()
 {
-    if (hand_hot_ == hand_test_)
+    if (hand_hot == hand_test)
         test_action();
 
-    std::pair<long, char> meta_datum = meta_data_[hand_hot_];
-    long current_page_num = meta_datum.first;
-
-    // if hot
-    if (meta_datum.second == 1)
+    auto meta_data = page_type_vector[hand_hot];
+    if (meta_data.second == type_hot)
     {
-        // set the reference bit
-        if (data_cache_[current_page_num] == reference_bit_true)
-            data_cache_[current_page_num] = reference_bit_false;
-
+        bool ref_bit = page_bit_and_is_test_map[meta_data.first].first;
+        if (ref_bit)
+            ref_bit = false;
         else
         {
-            meta_datum.second = type_cold;
-            data_cache_[current_page_num] = reference_bit_false;
-            hot_count_--;
-            cold_count_++;
+            meta_data.second = type_cold;
+            count_hot--;
+            count_cold++;
         }
     }
-    hand_hot_++;
-    if (hand_hot_ >= meta_data_.size())
-    {
-        hand_hot_ = 0;
-    }
+    hand_hot++;
+    if (hand_hot >= page_type_vector.size())
+        hand_hot = 0;
 }
 
-void CLOCKPRO::test_action()
+void CLOCK_PRO::test_action()
 {
-    if (hand_test_ == hand_cold_)
+    if (hand_test == hand_cold)
         cold_action();
+    auto meta_data = page_type_vector[hand_test];
 
-    pair<long, char> meta_datum = meta_data_[hand_test_];
-    //if test
+    if (meta_data.second == type_test)
+    {
+        //remove the page
+        page_bit_and_is_test_map.erase(meta_data.first);
+        delete_meta(meta_data);
 
-    if (meta_datum.second == type_test)
-    {
-        data_cache_.erase(meta_datum.first);
-        delete_meta_data_(meta_datum.first, meta_datum.second);
-        test_count_--;
-        if (max_cold_ > 1)
-            max_cold_--;
+        count_test--;
+        if (mem_cold_size > 1)
+            mem_cold_size--;
     }
-    hand_test_++;
-    if (hand_test_ >= meta_data_.size())
-    {
-        hand_test_ = 0;
-    }
+
+    hand_test++;
+    if (hand_test >= page_type_vector.size())
+        hand_test = 0;
 }

@@ -141,13 +141,43 @@ private:
     long get_evict_target();
 };
 
-class CLOCKPRO : public PagePolicy
+class CLOCK_PRO : public PagePolicy
 {
 
 public:
-    CLOCKPRO(size_t mem_size);
+    CLOCK_PRO(size_t mem_size);
     virtual const char *name() override { return "CLOCKPRO"; }
 
 private:
     virtual int add_memtrace_(const Record &record) override;
+
+    std::map<long, std::pair<bool, bool>> page_bit_and_is_test_map;
+    std::vector<std::pair<long, char>> page_type_vector;
+
+    size_t hand_cold;
+    size_t hand_hot;
+    size_t hand_test;
+
+    size_t count_cold;
+    size_t count_hot;
+    size_t count_test;
+
+    size_t mem_cold_size;
+
+    size_t count_;
+
+    int ret;
+    const int miss = 0;
+    const int hit = 1;
+    const int miss_with_eviction = 2;
+
+    void insert_page(const long &page_number);
+    void evict_pages();
+
+    void add_meta(std::pair<long, char> meta_data);
+    void delete_meta(std::pair<long, char> meta_data);
+
+    void cold_action();
+    void hot_action();
+    void test_action();
 };
