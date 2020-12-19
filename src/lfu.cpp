@@ -6,11 +6,10 @@
 
 #define PageNumber long
 #define Count size_t
-#define PageNumberIterator multimap<Count, PageNumber>::iterator
 
 using namespace std;
 
-LFU::LFU(size_t mem_size) : PagePolicy(mem_size)
+LFU::LFU(size_t mem_size) : PagePolicy(mem_size), count_(0)
 {
 }
 
