@@ -5,6 +5,7 @@
 #define _MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define _MAX(a, b) (((a) > (b)) ? (a) : (b))
 
+
 ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) { 
 	C = max_num_page_;
 	P = C/2;
@@ -12,8 +13,9 @@ ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) {
 
 int ARC::add_memtrace_(const Record &record) {
     count_++;
-    long vpn = record.addr << 14;
+    long vpn = record.addr >> 14;
     int index;
+
     // case 1) page is in the cache(T1) : hit
     if( (index = T1.find(vpn)) != -1 ) {
         T1.remove(index, vpn);
@@ -109,15 +111,19 @@ void ARC::decrease_P() {
 
 void ARC::replace(bool B2_flag) {
     size_t T1_size = T1.get_size();
+    size_t T2_size = T2.get_size();
     long victim_vpn;
+
     if( T1_size != 0 && (T1_size > P || ( B2_flag && T1_size == P)) ) {
         // move page : T1 --> B1
 	victim_vpn = T1.pop(); // delete the LRU page in T1
         B1.push(victim_vpn); // push page to B1
     } else {
-    	// move page : T2 --> B2
-	victim_vpn = T2.pop(); // delte the LRU page in T2
-	B2.push(victim_vpn); // push page to B2
+	  if( T2_size != 0 ) {
+    	    // move page : T2 --> B2
+	    victim_vpn = T2.pop(); // delte the LRU page in T2
+	    B2.push(victim_vpn); // push page to B2
+	  }
     }
 }
 
@@ -135,6 +141,7 @@ int List::find(long vpn) {
 
 void List::remove(long vpn) {	
     int _index = vpn_to_index[vpn];
+
     index_to_vpn.erase(_index);
     vpn_to_index.erase(vpn);
 }
