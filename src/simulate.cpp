@@ -142,7 +142,6 @@ void simulate_loop(void *arg) {
             if (r.is_write == 2) {
                 end_ts = r.time_stamp;
             }
-            printf("will try to add_memtrace to the policy\n");
             policy->add_memtrace(r);
         }
 

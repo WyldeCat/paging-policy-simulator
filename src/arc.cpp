@@ -2,8 +2,6 @@
 
 #include <stdio.h>
 
-#define _MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define _MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 ARC::ARC(size_t mem_size) : PagePolicy(mem_size), count_(0) { 
 	C = max_num_page_;
@@ -27,7 +25,7 @@ int ARC::add_memtrace_(const Record &record) {
     // case 3) page is in ghost cache(B1) : miss
     } else if( (index = B1.find(vpn)) != -1 ) {
 	increase_P();
-	replace(vpn, false);
+	replace(vpn);
 	// move page : B1 --> T2
 	B1.remove(index, vpn);
 	T2.push(vpn);
@@ -35,14 +33,14 @@ int ARC::add_memtrace_(const Record &record) {
     // case 4) page is in ghost cache(B2) : miss
     } else if( (index = B2.find(vpn)) != -1 ) {
 	decrease_P();
-	replace(vpn, true);
+	replace(vpn);
 	// move page : B2 --> T2
 	B2.remove(index, vpn);
 	T2.push(vpn);
         return 2;
     // case 5) page is not in both : miss
     } else {
-	int ret=0;
+	int ret = 0;
 	size_t T1_size = T1.get_size();
 	size_t T2_size = T2.get_size();
 	size_t B1_size = B1.get_size();
@@ -54,7 +52,7 @@ int ARC::add_memtrace_(const Record &record) {
 		if( T1_size < C ) {
 		    // delete LRU page in B1
 		    B1.pop();
-		    replace(vpn, false);
+		    replace(vpn);
 		// if B1 is empty
 		} else {
 		    T1.pop();
@@ -68,7 +66,7 @@ int ARC::add_memtrace_(const Record &record) {
 		    // delete LRU page in B2
 		    B2.pop();
 		}
-		replace(vpn, false);
+		replace(vpn);
 		ret = 2;
 	    }	    
 	}
@@ -84,33 +82,27 @@ void ARC::increase_P() {
     size_t B1_size = B1.get_size();
     size_t B2_size = B2.get_size();
 
-    size_t theta;
     if( B1_size >= B2_size ) {
-        theta = 1;
+        P++;
     } else {
-    	theta = B2_size/B1_size;
+    	P += B2_size/B1_size;
     }
-
-    P = _MIN(P+theta, C);
 }
 
 void ARC::decrease_P() {
     size_t B1_size = B1.get_size();
     size_t B2_size = B2.get_size();
 
-    size_t theta;
-    if( B2_size >= B1_size ) {
-        theta = 1;
+    if( B1_size >= B2_size ) {
+        P--;
     } else {
-    	theta= B1_size/B2_size;
+    	P -= B1_size/B2_size;
     }
-    P = _MAX(P-theta, 0);
 }
-
-void ARC::replace(long vpn, bool B2_flag) {
+void ARC::replace(long vpn) {
     size_t T1_size = T1.get_size();
     long victim_vpn;
-    if( T1_size != 0 && (T1_size > P || ( B2_flag && T1_size == P)) ) {
+    if( T1_size != 0 && (T1_size > P || (B2.find(vpn) != -1 && T1_size == P)) ) {
         // move page : T1 --> B1
 	victim_vpn = T1.pop(); // delete the LRU page in T1
         B1.push(victim_vpn); // push page to B1
