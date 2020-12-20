@@ -27,7 +27,7 @@ int ARC::add_memtrace_(const Record &record) {
     // case 3) page is in ghost cache(B1) : miss
     } else if( (index = B1.find(vpn)) != -1 ) {
 	increase_P();
-	replace(vpn, false);
+	replace(false);
 	// move page : B1 --> T2
 	B1.remove(index, vpn);
 	T2.push(vpn);
@@ -35,7 +35,7 @@ int ARC::add_memtrace_(const Record &record) {
     // case 4) page is in ghost cache(B2) : miss
     } else if( (index = B2.find(vpn)) != -1 ) {
 	decrease_P();
-	replace(vpn, true);
+	replace(true);
 	// move page : B2 --> T2
 	B2.remove(index, vpn);
 	T2.push(vpn);
@@ -54,7 +54,7 @@ int ARC::add_memtrace_(const Record &record) {
 		if( T1_size < C ) {
 		    // delete LRU page in B1
 		    B1.pop();
-		    replace(vpn, false);
+		    replace(false);
 		// if B1 is empty
 		} else {
 		    T1.pop();
@@ -68,7 +68,7 @@ int ARC::add_memtrace_(const Record &record) {
 		    // delete LRU page in B2
 		    B2.pop();
 		}
-		replace(vpn, false);
+		replace(false);
 		ret = 2;
 	    }	    
 	}
@@ -107,7 +107,7 @@ void ARC::decrease_P() {
     P = _MAX(P-theta, 0);
 }
 
-void ARC::replace(long vpn, bool B2_flag) {
+void ARC::replace(bool B2_flag) {
     size_t T1_size = T1.get_size();
     long victim_vpn;
     if( T1_size != 0 && (T1_size > P || ( B2_flag && T1_size == P)) ) {
