@@ -121,7 +121,7 @@ private:
     virtual int add_memtrace_(const Record &record) override;
     void decrease_P();
     void increase_P();
-    void replace(long vpn);
+    void replace(bool B2_flag);
 
     size_t count_;
     List T1, T2, B1, B2;
