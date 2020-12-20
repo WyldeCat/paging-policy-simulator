@@ -142,7 +142,6 @@ void simulate_loop(void *arg) {
             if (r.is_write == 2) {
                 end_ts = r.time_stamp;
             }
-            printf("will try to add_memtrace to the policy\n");
             policy->add_memtrace(r);
         }
 
@@ -210,8 +209,7 @@ void add_memtrace(const Record &r)
 
         while (true)
         {
-            while (!PIN_MutexTryLock(&lock))
-                ;
+            while (!PIN_MutexTryLock(&lock));
             is_free_empty = buf_free.empty();
             if (!is_free_empty)
             {

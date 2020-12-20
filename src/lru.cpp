@@ -6,7 +6,7 @@ LRU::LRU(size_t mem_size) : PagePolicy(mem_size), count_(0) { }
 
 int LRU::add_memtrace_(const Record &record) {
     count_++;
-    long vpn = record.addr << 14;
+    long vpn = record.addr >> 14;
 
     // if the page isn't present
     if (vpn_to_index_.find(vpn) == vpn_to_index_.end()) {
