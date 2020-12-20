@@ -53,7 +53,7 @@ public:
     }
 
 protected:
-    static constexpr size_t page_size = 4;
+    static constexpr size_t page_size = 4096;
     size_t mem_size_;
     size_t max_num_page_;
     std::vector<Record> results_;

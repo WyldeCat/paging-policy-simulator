@@ -169,7 +169,7 @@ void simulate_loop(void *arg) {
 
     long total = get_timestamp();
     fprintf(stderr, "[Simulator][INFO]  Simulation Finished!\n\n");
-    fprintf(stderr, "[Simulator][INFO] Physical Mem(KiB) : %zd\n", mem);
+    fprintf(stderr, "[Simulator][INFO]   Physical Mem(B) : %zd\n", mem);
     fprintf(stderr, "[Simulator][INFO]       Elapsed(ms) : %f\n", end_ts / 1000.0);
     fprintf(stderr, "[Simulator][INFO] Total elapsed(ms) : %f\n", total / 1000.0);
     fprintf(stderr, "[Simulator][INFO]  Total mem access : %ld\n", policy->total_access());
