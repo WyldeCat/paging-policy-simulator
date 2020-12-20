@@ -16,7 +16,7 @@ LFU::LFU(size_t mem_size) : PagePolicy(mem_size), count_(0)
 int LFU::add_memtrace_(const Record &record)
 {
     count_++;
-    PageNumber vpn = record.addr << 14;
+    PageNumber vpn = record.addr >> 14;
     auto page_iterator = page_number_unorderedmap.find(vpn);
 
     // the page is in the map

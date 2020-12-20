@@ -38,7 +38,7 @@ int CLOCK_PRO::add_memtrace_(const Record &record)
 {
     ret = miss;
     count_++;
-    PageNumber vpn = record.addr << 14;
+    PageNumber vpn = record.addr >> 14;
 
     auto page_iterator = page_bit_and_is_test_map.find(vpn);
 
